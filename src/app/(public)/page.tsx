@@ -176,19 +176,6 @@ function HeroSection() {
                 Reserve a Table
               </Link>
             </motion.div>
-
-            {/* Scroll indicator */}
-            <motion.div
-              variants={fadeIn}
-              className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-            >
-              <span className="text-label text-[var(--text-muted)] tracking-[0.2em]">Scroll</span>
-              <motion.div
-                animate={{ y: [0, 8, 0] }}
-                transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-                className="w-px h-10 bg-gradient-to-b from-[var(--accent-gold)] to-transparent"
-              />
-            </motion.div>
           </motion.div>
         )}
       </motion.div>
