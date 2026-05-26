@@ -22,7 +22,7 @@ interface Stats {
   todayRevenue: number
   todayReservations: number
   pendingPayments: number
-  newCustomers: number
+  totalCustomers: number
   activeOrders: number
   recentOrders: RecentOrder[]
   recentReservations: RecentReservation[]
@@ -65,7 +65,7 @@ export default function AdminDashboardPage() {
     todayRevenue: 0,
     todayReservations: 0,
     pendingPayments: 0,
-    newCustomers: 0,
+    totalCustomers: 0,
     activeOrders: 0,
     recentOrders: [],
     recentReservations: [],
@@ -88,11 +88,10 @@ export default function AdminDashboardPage() {
         .select('status, date')
         .eq('date', today)
         .returns<{ status: string; date: string }[]>(),
+      // ✅ Fixed: count ALL customers with no date filter, using count: 'exact'
       supabase
         .from('customers')
-        .select('created_at')
-        .gte('created_at', `${today}T00:00:00`)
-        .returns<{ created_at: string }[]>(),
+        .select('id', { count: 'exact', head: true }),
       supabase
         .from('orders')
         .select('id, order_ref, customer_name, total_amount, status, payment_method, created_at')
@@ -122,7 +121,8 @@ export default function AdminDashboardPage() {
       todayRevenue,
       todayReservations: reservationsRes.data?.length ?? 0,
       pendingPayments,
-      newCustomers: customersRes.data?.length ?? 0,
+      // ✅ Fixed: read from .count instead of .data?.length
+      totalCustomers: customersRes.count ?? 0,
       activeOrders,
       recentOrders: recentOrdersRes.data ?? [],
       recentReservations: recentResRes.data ?? [],
@@ -133,7 +133,6 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     fetchStats()
-    // Auto-refresh every 30s
     const interval = setInterval(fetchStats, 30000)
     return () => clearInterval(interval)
   }, [])
@@ -280,12 +279,12 @@ export default function AdminDashboardPage() {
           accent="gold"
           href="/admin/orders"
         />
+        {/* ✅ Fixed: TOTAL CUSTOMERS — no "Today" sub, reads totalCustomers */}
         <StatCard
-          label="NEW CUSTOMERS"
-          value={stats.newCustomers}
+          label="TOTAL CUSTOMERS"
+          value={stats.totalCustomers}
           icon={Users}
           accent="gold"
-          sub="Today"
           href="/admin/customers"
         />
       </div>

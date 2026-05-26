@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
 
 // ─── Social Icons ─────────────────────────────────────────────────────────────
 
@@ -32,7 +31,7 @@ function TiktokIcon() {
   )
 }
 
-// ─── Link Groups ──────────────────────────────────────────────────────────────
+// ─── Nav Links ────────────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
   { href: '/menu',         label: 'Our Menu' },
@@ -71,8 +70,8 @@ function NewsletterForm() {
 
   if (status === 'success') {
     return (
-      <div className="flex items-center gap-3 py-3">
-        <div className="w-5 h-5 border border-[var(--accent-gold)] flex items-center justify-center flex-shrink-0">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0' }}>
+        <div style={{ width: 20, height: 20, border: '1px solid var(--accent-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" strokeWidth="2.5" strokeLinecap="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
@@ -86,7 +85,7 @@ function NewsletterForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <div className="relative flex items-stretch">
+      <div style={{ display: 'flex' }}>
         <input
           type="email"
           value={email}
@@ -107,6 +106,7 @@ function NewsletterForm() {
             outline: 'none',
             flex: 1,
             minWidth: 0,
+            width: '100%',
           }}
         />
         <button
@@ -119,12 +119,13 @@ function NewsletterForm() {
             background: 'var(--accent-gold)',
             color: '#0a0a0a',
             border: 'none',
-            padding: '11px 16px',
+            padding: '11px 18px',
             cursor: 'pointer',
             fontWeight: 600,
             textTransform: 'uppercase',
             flexShrink: 0,
             opacity: status === 'loading' ? 0.6 : 1,
+            whiteSpace: 'nowrap',
           }}
         >
           {status === 'loading' ? '…' : 'Join'}
@@ -137,7 +138,26 @@ function NewsletterForm() {
   )
 }
 
-// ─── Footer Component ─────────────────────────────────────────────────────────
+// ─── Section Header ───────────────────────────────────────────────────────────
+
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+      <div style={{ width: 16, height: 1, background: 'var(--accent-gold)', flexShrink: 0 }} />
+      <span style={{
+        fontFamily: 'var(--font-sans)',
+        fontSize: 9,
+        letterSpacing: '0.3em',
+        textTransform: 'uppercase' as const,
+        color: 'var(--accent-gold)',
+      }}>
+        {label}
+      </span>
+    </div>
+  )
+}
+
+// ─── Footer ───────────────────────────────────────────────────────────────────
 
 export default function Footer() {
   const year = new Date().getFullYear()
@@ -147,29 +167,43 @@ export default function Footer() {
       aria-label="Site footer"
       style={{ background: '#080808', borderTop: '1px solid rgba(255,255,255,0.04)' }}
     >
-
-      {/* ── TOP ACCENT LINE ── */}
+      {/* Top accent line */}
       <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, var(--accent-gold) 30%, var(--accent-crimson) 70%, transparent)' }} />
 
-      {/* ── MAIN FOOTER BODY ── */}
-      <div className="container-eclat" style={{ paddingTop: 72, paddingBottom: 56 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1.3fr', gap: 48, alignItems: 'start' }}>
+      {/* Main body */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 1280,
+          margin: '0 auto',
+          padding: '64px 24px 56px',
+          boxSizing: 'border-box',
+        }}
+      >
 
-          {/* ── COL 1: BRAND ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-            {/* Wordmark */}
+        {/* ── TOP: Brand row ── */}
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 32,
+          paddingBottom: 48,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          marginBottom: 48,
+        }}>
+          {/* Wordmark + tagline */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div>
-              <div
-                style={{
-                  fontFamily: 'var(--font-serif)',
-                  fontSize: 42,
-                  fontWeight: 300,
-                  color: 'white',
-                  lineHeight: 1,
-                  letterSpacing: '-0.01em',
-                  marginBottom: 4,
-                }}
-              >
+              <div style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 42,
+                fontWeight: 300,
+                color: 'white',
+                lineHeight: 1,
+                letterSpacing: '-0.01em',
+                marginBottom: 6,
+              }}>
                 Éclat
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -186,75 +220,73 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Tagline quote */}
-            <blockquote style={{ borderLeft: '1px solid rgba(201,168,76,0.3)', paddingLeft: 14, margin: 0 }}>
+            <blockquote style={{ borderLeft: '1px solid rgba(201,168,76,0.3)', paddingLeft: 14, margin: 0, maxWidth: 280 }}>
               <p style={{
                 fontFamily: 'var(--font-serif)',
-                fontSize: 14,
+                fontSize: 13,
                 fontStyle: 'italic',
                 color: 'rgba(255,255,255,0.45)',
                 lineHeight: 1.7,
                 margin: 0,
               }}>
-                "Where every detail is composed<br />with obsessive intention."
+                "Where every detail is composed<br /> with obsessive intention."
               </p>
             </blockquote>
-
-            {/* Social icons */}
-            <div style={{ display: 'flex', gap: 10 }}>
-              {[
-                { label: 'Instagram', icon: <InstagramIcon />, href: '#' },
-                { label: 'Facebook',  icon: <FacebookIcon />,  href: '#' },
-                { label: 'TikTok',    icon: <TiktokIcon />,    href: '#' },
-              ].map(s => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  aria-label={s.label}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'rgba(255,255,255,0.4)',
-                    transition: 'all 0.25s',
-                    textDecoration: 'none',
-                  }}
-                  onMouseEnter={e => {
-                    const el = e.currentTarget
-                    el.style.borderColor = 'var(--accent-gold)'
-                    el.style.color = 'var(--accent-gold)'
-                    el.style.background = 'rgba(201,168,76,0.06)'
-                  }}
-                  onMouseLeave={e => {
-                    const el = e.currentTarget
-                    el.style.borderColor = 'rgba(255,255,255,0.1)'
-                    el.style.color = 'rgba(255,255,255,0.4)'
-                    el.style.background = 'transparent'
-                  }}
-                >
-                  {s.icon}
-                </a>
-              ))}
-            </div>
           </div>
 
-          {/* ── COL 2: NAV ── */}
+          {/* Social icons */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            {[
+              { label: 'Instagram', icon: <InstagramIcon />, href: '#' },
+              { label: 'Facebook',  icon: <FacebookIcon />,  href: '#' },
+              { label: 'TikTok',    icon: <TiktokIcon />,    href: '#' },
+            ].map(s => (
+              <a
+                key={s.label}
+                href={s.href}
+                aria-label={s.label}
+                style={{
+                  width: 38,
+                  height: 38,
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'rgba(255,255,255,0.4)',
+                  transition: 'all 0.25s',
+                  textDecoration: 'none',
+                  flexShrink: 0,
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget
+                  el.style.borderColor = 'var(--accent-gold)'
+                  el.style.color = 'var(--accent-gold)'
+                  el.style.background = 'rgba(201,168,76,0.06)'
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget
+                  el.style.borderColor = 'rgba(255,255,255,0.1)'
+                  el.style.color = 'rgba(255,255,255,0.4)'
+                  el.style.background = 'transparent'
+                }}
+              >
+                {s.icon}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* ── BOTTOM GRID: Nav / Contact / Newsletter ── */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 48,
+          width: '100%',
+        }}>
+
+          {/* Nav */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-              <div style={{ width: 16, height: 1, background: 'var(--accent-gold)' }} />
-              <span style={{
-                fontFamily: 'var(--font-sans)',
-                fontSize: 9,
-                letterSpacing: '0.3em',
-                textTransform: 'uppercase',
-                color: 'var(--accent-gold)',
-              }}>
-                Navigate
-              </span>
-            </div>
+            <SectionHeader label="Navigate" />
             <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
               {NAV_LINKS.map(({ href, label }) => (
                 <li key={href}>
@@ -283,30 +315,14 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* ── COL 3: CONTACT ── */}
+          {/* Contact */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-              <div style={{ width: 16, height: 1, background: 'var(--accent-gold)' }} />
-              <span style={{
-                fontFamily: 'var(--font-sans)',
-                fontSize: 9,
-                letterSpacing: '0.3em',
-                textTransform: 'uppercase',
-                color: 'var(--accent-gold)',
-              }}>
-                Find Us
-              </span>
-            </div>
-
+            <SectionHeader label="Find Us" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {/* Address */}
-              <div>
-                <p style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 300, color: 'rgba(255,255,255,0.45)', lineHeight: 1.8, margin: 0 }}>
-                  123 Luxury Avenue<br />Prestige District
-                </p>
-              </div>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 300, color: 'rgba(255,255,255,0.45)', lineHeight: 1.8, margin: 0 }}>
+                123 Luxury Avenue<br />Prestige District
+              </p>
 
-              {/* Phone & Email */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
                   {
@@ -353,7 +369,6 @@ export default function Footer() {
                 ))}
               </div>
 
-              {/* Hours */}
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 16 }}>
                 <p style={{
                   fontFamily: 'var(--font-sans)',
@@ -365,10 +380,7 @@ export default function Footer() {
                 }}>
                   Hours
                 </p>
-                {[
-                  'Mon – Sat · 5:00 PM – 11:00 PM',
-                  'Sunday · 5:00 PM – 10:00 PM',
-                ].map(h => (
+                {['Mon – Sat · 5:00 PM – 11:00 PM', 'Sunday · 5:00 PM – 10:00 PM'].map(h => (
                   <p key={h} style={{ fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.35)', margin: '0 0 4px', letterSpacing: '0.02em' }}>
                     {h}
                   </p>
@@ -377,21 +389,9 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* ── COL 4: NEWSLETTER ── */}
+          {/* Newsletter */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-              <div style={{ width: 16, height: 1, background: 'var(--accent-gold)' }} />
-              <span style={{
-                fontFamily: 'var(--font-sans)',
-                fontSize: 9,
-                letterSpacing: '0.3em',
-                textTransform: 'uppercase',
-                color: 'var(--accent-gold)',
-              }}>
-                Stay Connected
-              </span>
-            </div>
-
+            <SectionHeader label="Stay Connected" />
             <p style={{
               fontFamily: 'var(--font-sans)',
               fontSize: 13,
@@ -405,7 +405,6 @@ export default function Footer() {
 
             <NewsletterForm />
 
-            {/* Reserve CTA */}
             <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
               <p style={{
                 fontFamily: 'var(--font-sans)',
@@ -446,57 +445,63 @@ export default function Footer() {
               </Link>
             </div>
           </div>
+
         </div>
       </div>
 
-      {/* ── BOTTOM BAR ── */}
+      {/* Bottom bar */}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="container-eclat" style={{ paddingTop: 20, paddingBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{
+          width: '100%',
+          maxWidth: 1280,
+          margin: '0 auto',
+          padding: '20px 24px',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+        }}>
+          <p style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: 11,
+            color: 'rgba(255,255,255,0.2)',
+            fontWeight: 300,
+            letterSpacing: '0.05em',
+            margin: 0,
+          }}>
+            © {year} Éclat Fine Dining. All rights reserved.
+          </p>
 
-            {/* Left — copyright */}
-            <p style={{
-              fontFamily: 'var(--font-sans)',
-              fontSize: 11,
-              color: 'rgba(255,255,255,0.2)',
-              fontWeight: 300,
-              letterSpacing: '0.05em',
-              margin: 0,
-            }}>
-              © {year} Éclat Fine Dining. All rights reserved.
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'rgba(201,168,76,0.2)' }}>
+            <div style={{ width: 40, height: 1, background: 'rgba(201,168,76,0.15)' }} />
+            <span style={{ fontSize: 10 }}>✦</span>
+            <div style={{ width: 40, height: 1, background: 'rgba(201,168,76,0.15)' }} />
+          </div>
 
-            {/* Center — ornament */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'rgba(201,168,76,0.2)' }}>
-              <div style={{ width: 40, height: 1, background: 'rgba(201,168,76,0.15)' }} />
-              <span style={{ fontSize: 10 }}>✦</span>
-              <div style={{ width: 40, height: 1, background: 'rgba(201,168,76,0.15)' }} />
-            </div>
-
-            {/* Right — legal links */}
-            <div style={{ display: 'flex', gap: 24 }}>
-              {[
-                { href: '/privacy', label: 'Privacy Policy' },
-                { href: '/terms',   label: 'Terms' },
-              ].map(({ href, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  style={{
-                    fontFamily: 'var(--font-sans)',
-                    fontSize: 11,
-                    color: 'rgba(255,255,255,0.2)',
-                    textDecoration: 'none',
-                    letterSpacing: '0.05em',
-                    transition: 'color 0.2s',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.5)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.2)' }}
-                >
-                  {label}
-                </Link>
-              ))}
-            </div>
+          <div style={{ display: 'flex', gap: 24 }}>
+            {[
+              { href: '/privacy', label: 'Privacy Policy' },
+              { href: '/terms',   label: 'Terms' },
+            ].map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 11,
+                  color: 'rgba(255,255,255,0.2)',
+                  textDecoration: 'none',
+                  letterSpacing: '0.05em',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.5)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.2)' }}
+              >
+                {label}
+              </Link>
+            ))}
           </div>
         </div>
       </div>
