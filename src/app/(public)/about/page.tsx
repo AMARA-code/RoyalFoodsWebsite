@@ -353,7 +353,64 @@ function ChefCard3D({ chef, index }: { chef: Chef; index: number }) {
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInView(ref, { once: true, margin: '-60px' })
   const [flipped, setFlipped] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  // ── MOBILE: flat card, no flip ──
+  if (isMobile) {
+    return (
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: 60 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.8, delay: index * 0.15, ease: [0.16, 1, 0.3, 1] }}
+        className="relative overflow-hidden"
+        style={{ aspectRatio: '3/4' }}
+      >
+        <Image
+          src={chef.photo_url}
+          alt={chef.name}
+          fill
+          className="object-cover object-top"
+          sizes="50vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+        {/* Corner accents */}
+        <div className="absolute top-3 left-3 w-5 h-5 border-t border-l border-[var(--accent-gold)]/60" />
+        <div className="absolute top-3 right-3 w-5 h-5 border-t border-r border-[var(--accent-gold)]/60" />
+        <div className="absolute bottom-3 left-3 w-5 h-5 border-b border-l border-[var(--accent-gold)]/60" />
+        <div className="absolute bottom-3 right-3 w-5 h-5 border-b border-r border-[var(--accent-gold)]/60" />
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <div
+            className="text-[var(--accent-gold)] text-[8px] tracking-[0.2em] uppercase mb-1 leading-tight"
+            style={{ fontFamily: 'var(--font-sans)' }}
+          >
+            {chef.speciality}
+          </div>
+          <h3
+            className="text-white text-base leading-tight mb-0.5"
+            style={{ fontFamily: 'var(--font-serif)', fontWeight: 600 }}
+          >
+            {chef.name}
+          </h3>
+          <p
+            className="text-white/50 text-[9px] tracking-widest uppercase"
+            style={{ fontFamily: 'var(--font-sans)' }}
+          >
+            {chef.title}
+          </p>
+        </div>
+      </motion.div>
+    )
+  }
+
+  // ── DESKTOP: full 3D flip card ──
   return (
     <motion.div
       ref={ref}
@@ -377,7 +434,7 @@ function ChefCard3D({ chef, index }: { chef: Chef; index: number }) {
             alt={chef.name}
             fill
             className="object-cover object-top"
-            sizes="(max-width: 768px) 100vw, 25vw"
+            sizes="25vw"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
           <div className="absolute top-3 left-3 w-6 h-6 border-t border-l border-[var(--accent-gold)]/60" />
@@ -1007,31 +1064,7 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-
-        {/* ── SCROLL HINT ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 2, duration: 0.8 }}
-          className="absolute bottom-[76px] left-10 md:left-20 z-20 hidden lg:flex flex-col items-center gap-2"
-        >
-          <motion.div
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            className="w-px h-10"
-            style={{ background: 'linear-gradient(to bottom, var(--accent-gold), transparent)' }}
-          />
-          <span
-            className="text-[8px] tracking-[0.35em] uppercase"
-            style={{
-              fontFamily: 'var(--font-sans)',
-              color: 'rgba(201,168,76,0.5)',
-              writingMode: 'vertical-rl',
-            }}
-          >
-            Scroll
-          </span>
-        </motion.div>
+  
 
         {/* ── MOBILE DOTS ── */}
         <div className="absolute bottom-[76px] left-1/2 -translate-x-1/2 flex gap-2 lg:hidden z-20">
