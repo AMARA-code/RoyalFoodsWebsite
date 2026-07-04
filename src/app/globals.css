@@ -1,0 +1,584 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* ── Royal Foods Theme ── */
+    --color-navy: #1A2238;
+    --color-red: #D62828;
+    --color-off-white: #FAF7F2;
+
+    /* ── Core Backgrounds ── */
+    --bg-primary: #FAF7F2;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --bg-elevated: #f3efe8;
+    --bg-border: #e8e4de;
+
+    /* ── Accent Colors ── */
+    --accent-crimson: #D62828;
+    --accent-crimson-hover: #b81f1f;
+    --accent-crimson-light: #e84545;
+    --accent-gold: #1A2238;
+    --accent-gold-hover: #2a3450;
+    --accent-gold-muted: rgba(26, 34, 56, 0.08);
+
+    /* ── Text Colors ── */
+    --text-primary: #1A2238;
+    --text-secondary: #5a5a5a;
+    --text-muted: #888888;
+    --text-accent: #D62828;
+
+    /* ── Borders ── */
+    --border-subtle: rgba(26, 34, 56, 0.08);
+    --border-default: rgba(26, 34, 56, 0.15);
+    --border-accent: rgba(214, 40, 40, 0.35);
+    --border-gold: rgba(26, 34, 56, 0.2);
+
+    /* ── Shadows ── */
+    --shadow-card: 0 2px 12px rgba(26, 34, 56, 0.08);
+    --shadow-elevated: 0 8px 32px rgba(26, 34, 56, 0.12);
+    --shadow-glow-crimson: 0 4px 20px rgba(214, 40, 40, 0.2);
+    --shadow-glow-gold: 0 4px 20px rgba(26, 34, 56, 0.1);
+
+    /* ── Typography ── */
+    --font-serif: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+    --font-sans: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+
+    /* ── Transitions ── */
+    --transition-fast: all 0.2s ease;
+    --transition-base: all 0.3s ease;
+    --transition-slow: all 0.5s ease;
+
+    /* ── Spacing ── */
+    --section-padding: 5rem 0;
+    --container-max: 1200px;
+
+    /* ── Fixed header (navbar + optional ticker) ── */
+    --rf-header-nav-h: 3rem;
+    --rf-header-ticker-h: 2.625rem;
+    --rf-header-offset: var(--rf-header-nav-h);
+    --rf-header-offset-banner: calc(var(--rf-header-nav-h) + var(--rf-header-ticker-h));
+
+    /* ── Menu toolbar (category filter + search, below header) ── */
+    --rf-menu-filter-h: 2.75rem;
+    --rf-menu-search-h: 4.25rem;
+    --rf-menu-filter-only-offset: calc(var(--rf-header-offset) + var(--rf-menu-filter-h));
+    --rf-menu-filter-only-offset-banner: calc(var(--rf-header-offset-banner) + var(--rf-menu-filter-h));
+    --rf-menu-content-offset: calc(var(--rf-menu-filter-only-offset) + var(--rf-menu-search-h));
+    --rf-menu-content-offset-banner: calc(var(--rf-menu-filter-only-offset-banner) + var(--rf-menu-search-h));
+  }
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color-scheme: light;
+  }
+
+  body {
+    background-color: #FAF7F2;
+    color: #1A2238;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    line-height: 1.25;
+    color: #1A2238;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-navy);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-gold-hover);
+  }
+
+  /* ── Selection ── */
+  ::selection {
+    background: rgba(214, 40, 40, 0.2);
+    color: var(--text-primary);
+  }
+
+  /* ── Focus ── */
+  :focus-visible {
+    outline: 2px solid var(--accent-crimson);
+    outline-offset: 2px;
+  }
+
+  /* ── Links ── */
+  a {
+    color: inherit;
+    text-decoration: none;
+    transition: var(--transition-fast);
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+
+@layer utilities {
+  /* ── Typography Utilities ── */
+  .font-serif { font-family: var(--font-serif); }
+  .font-sans  { font-family: var(--font-sans); }
+
+  .text-display {
+    font-family: var(--font-serif);
+    font-size: clamp(3rem, 7vw, 6rem);
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    line-height: 1.05;
+  }
+
+  .text-heading-xl {
+    font-family: var(--font-serif);
+    font-size: clamp(2.2rem, 4vw, 3.5rem);
+    font-weight: 400;
+    line-height: 1.15;
+  }
+
+  .text-heading-lg {
+    font-family: var(--font-serif);
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    font-weight: 400;
+  }
+
+  .text-heading-md {
+    font-family: var(--font-serif);
+    font-size: clamp(1.4rem, 2vw, 1.8rem);
+    font-weight: 600;
+  }
+
+  .text-label {
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  /* ── Color Utilities ── */
+  .text-accent-gold    { color: var(--accent-gold); }
+  .text-accent-crimson { color: var(--accent-crimson-light); }
+  .text-muted          { color: var(--text-muted); }
+  .text-secondary      { color: var(--text-secondary); }
+
+  /* ── Background Utilities ── */
+  .bg-primary   { background-color: var(--bg-primary); }
+  .bg-secondary { background-color: var(--bg-secondary); }
+  .bg-card      { background-color: var(--bg-card); }
+  .bg-elevated  { background-color: var(--bg-elevated); }
+
+  /* ── Border Utilities ── */
+  .border-subtle  { border-color: var(--border-subtle); }
+  .border-default { border-color: var(--border-default); }
+  .border-accent  { border-color: var(--border-accent); }
+  .border-gold    { border-color: var(--border-gold); }
+
+  /* ── Gold Divider Line ── */
+  .divider-gold {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+    margin: 0 auto;
+  }
+
+  .divider-crimson {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-crimson-light), transparent);
+    margin: 0 auto;
+  }
+
+  /* ── Container ── */
+  .container-eclat {
+    width: 100%;
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* ── Section Padding ── */
+  .section-py {
+    padding: 5rem 0;
+  }
+  .section-py-lg {
+    padding: 8rem 0;
+  }
+
+  /* ── Card ── */
+  .card-eclat {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    transition: var(--transition-base);
+  }
+  .card-eclat:hover {
+    border-color: var(--border-default);
+    box-shadow: var(--shadow-card);
+    transform: translateY(-4px);
+  }
+
+  /* ── Buttons ── */
+  .btn-crimson {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 2rem;
+    background: var(--accent-crimson);
+    color: #ffffff;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: 1px solid var(--accent-crimson);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition-base);
+  }
+  .btn-crimson:hover {
+    background: var(--accent-crimson-hover);
+    border-color: var(--accent-crimson-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow-crimson);
+  }
+
+  .btn-gold {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 2rem;
+    background: transparent;
+    color: var(--accent-gold);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border: 1px solid var(--border-gold);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: var(--transition-base);
+  }
+  .btn-gold:hover {
+    background: var(--accent-gold-muted);
+    border-color: var(--accent-gold);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(201, 168, 76, 0.15);
+  }
+
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 2rem;
+    background: transparent;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border: 1px solid var(--border-default);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: var(--transition-base);
+  }
+  .btn-outline:hover {
+    background: var(--bg-elevated);
+    border-color: var(--text-secondary);
+    transform: translateY(-1px);
+  }
+
+  .btn-black {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    background: #1A2238;
+    color: #ffffff;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition-base);
+  }
+  .btn-black:hover {
+    background: #2a3450;
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ── Form Inputs ── */
+  .input-eclat {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 2px;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    transition: var(--transition-fast);
+  }
+  .input-eclat:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+    background: var(--bg-card);
+  }
+  .input-eclat::placeholder {
+    color: var(--text-muted);
+  }
+
+  /* ── Badge ── */
+  .badge-crimson {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    background: rgba(139, 0, 0, 0.2);
+    border: 1px solid rgba(139, 0, 0, 0.4);
+    color: #e07070;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 2px;
+  }
+
+  .badge-gold {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    background: rgba(201, 168, 76, 0.12);
+    border: 1px solid rgba(201, 168, 76, 0.3);
+    color: var(--accent-gold);
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 2px;
+  }
+
+  /* ── Price Tag ── */
+  .price-tag {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent-crimson);
+  }
+
+  .price-badge {
+    display: inline-block;
+    padding: 0.25rem 0.65rem;
+    background: var(--accent-crimson);
+    color: #ffffff;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 6px;
+  }
+
+  /* ── Overlay ── */
+  .overlay-dark {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(10, 10, 10, 0.3) 0%,
+      rgba(10, 10, 10, 0.7) 100%
+    );
+  }
+
+  /* ── Page Hero ── */
+  .page-hero-overlay {
+    background: linear-gradient(
+      135deg,
+      rgba(10, 10, 10, 0.85) 0%,
+      rgba(26, 10, 10, 0.75) 50%,
+      rgba(10, 10, 10, 0.85) 100%
+    );
+  }
+
+  /* ── Shimmer Loading ── */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--bg-card) 25%,
+      var(--bg-elevated) 50%,
+      var(--bg-card) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ── Fade animations ── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .animate-fade-in-up   { animation: fadeInUp 0.7s ease forwards; }
+  .animate-fade-in-down { animation: fadeInDown 0.5s ease forwards; }
+  .animate-fade-in      { animation: fadeIn 0.5s ease forwards; }
+
+  /* ── React Day Picker (reservations) ── */
+  .rdp-eclat {
+    --rdp-accent-color: var(--accent-gold);
+    --rdp-accent-background-color: rgba(201, 168, 76, 0.15);
+    --rdp-day-height: 40px;
+    --rdp-day-width: 40px;
+    color: var(--text-primary);
+  }
+
+  .rdp-eclat .rdp-chevron {
+    fill: var(--accent-gold);
+  }
+
+  .rdp-eclat .rdp-day_button {
+    border-radius: 2px;
+  }
+}
+
+/* ── Announcement ticker ── */
+@keyframes announcement-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.announcement-ticker-track {
+  animation: announcement-scroll 28s linear infinite;
+}
+
+.announcement-ticker:hover .announcement-ticker-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announcement-ticker-track {
+    animation: none;
+  }
+}
+
+/* ── Royal Foods menu layout offsets ── */
+.rf-menu-filter-fixed {
+  top: var(--rf-header-offset);
+}
+
+.rf-menu-filter-fixed--banner {
+  top: var(--rf-header-offset-banner);
+}
+
+.rf-menu-scroll-area {
+  padding-top: var(--rf-menu-filter-only-offset);
+}
+
+.rf-menu-scroll-area--banner {
+  padding-top: var(--rf-menu-filter-only-offset-banner);
+}
+
+.rf-menu-category-anchor {
+  scroll-margin-top: var(--rf-menu-content-offset);
+}
+
+.rf-menu-category-anchor--banner {
+  scroll-margin-top: var(--rf-menu-content-offset-banner);
+}
+
+/* ── Royal Foods boot loader ── */
+.rf-boot-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #faf7f2;
+  transition: opacity 0.3s ease;
+}
+
+.rf-boot-splash img {
+  width: 112px;
+  height: 112px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 12px rgba(26, 34, 56, 0.08);
+  animation: rf-logo-pulse 1.4s ease-in-out infinite;
+}
+
+.rf-boot-splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+.rf-logo-loader {
+  animation: rf-logo-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes rf-logo-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 0.92;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rf-boot-splash img,
+  .rf-logo-loader {
+    animation: none;
+  }
+}
