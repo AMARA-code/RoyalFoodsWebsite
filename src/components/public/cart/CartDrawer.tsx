@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
 import { X, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react'
 import { useCartStore, selectCartItems } from '@/store/cartStore'
 import { useOrderPricing } from '@/hooks/useOrderPricing'
@@ -34,24 +33,12 @@ export default function CartDrawer({ open, onClose }: Props) {
   }, [open])
 
   return (
-    <AnimatePresence>
+    <>
       {open && (
         <>
-          <motion.div
-            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-          <motion.div
-            className="fixed right-0 top-0 bottom-0 z-50 flex flex-col w-full max-w-[420px] bg-white border-l border-gray-200 shadow-2xl"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          >
+          <div className="fixed right-0 top-0 bottom-0 z-50 flex flex-col w-full max-w-[420px] bg-white border-l border-gray-200 shadow-2xl">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <div>
                 <h2 className="text-lg font-bold text-[#1A2238]">Your Cart</h2>
@@ -171,9 +158,9 @@ export default function CartDrawer({ open, onClose }: Props) {
                 </button>
               </div>
             )}
-          </motion.div>
+          </div>
         </>
       )}
-    </AnimatePresence>
+    </>
   )
 }

@@ -54,10 +54,6 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${montserrat.variable} light`} style={{ colorScheme: 'light' }}>
       <body className="bg-[#FAF7F2] text-[#1A2238] antialiased font-sans">
-        <div id="rf-boot-splash" className="rf-boot-splash" aria-hidden="true">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/royal-foods-logo.png" width="112" height="112" alt="" />
-        </div>
         <Providers>{children}</Providers>
       </body>
     </html>
