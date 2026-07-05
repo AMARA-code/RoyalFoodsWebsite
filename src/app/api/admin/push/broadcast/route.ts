@@ -3,6 +3,11 @@ import webpush from 'web-push'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 
+interface PushSubscriptionJSON {
+  endpoint: string
+  keys: { p256dh: string; auth: string }
+}
+
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'amaranaeem453@gmail.com'
 
 export async function POST(request: Request) {
@@ -40,9 +45,9 @@ export async function POST(request: Request) {
       .eq('key', 'push_subscriptions')
       .maybeSingle()
 
-    const subs = Array.isArray(data?.value)
+    const subs: PushSubscriptionJSON[] = Array.isArray(data?.value)
       ? data.value.filter(
-          (item: unknown): item is { endpoint: string; keys: { p256dh: string; auth: string } } =>
+          (item: unknown): item is PushSubscriptionJSON =>
             Boolean(item && typeof item === 'object' && 'endpoint' in (item as Record<string, unknown>))
         )
       : []
