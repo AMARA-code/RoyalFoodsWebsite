@@ -8,6 +8,25 @@ interface PushSubscriptionJSON {
   keys: { p256dh: string; auth: string }
 }
 
+interface StoredPushSubscription extends PushSubscriptionJSON {
+  active?: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+function isStoredPushSubscription(value: unknown): value is StoredPushSubscription {
+  if (!value || typeof value !== 'object') return false
+
+  const item = value as Record<string, unknown>
+  return (
+    typeof item.endpoint === 'string' &&
+    typeof item.keys === 'object' &&
+    item.keys !== null &&
+    typeof (item.keys as { p256dh?: unknown }).p256dh === 'string' &&
+    typeof (item.keys as { auth?: unknown }).auth === 'string'
+  )
+}
+
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'amaranaeem453@gmail.com'
 
 export async function POST(request: Request) {
@@ -45,11 +64,8 @@ export async function POST(request: Request) {
       .eq('key', 'push_subscriptions')
       .maybeSingle()
 
-    const subs: PushSubscriptionJSON[] = Array.isArray(data?.value)
-      ? data.value.filter(
-          (item: unknown): item is PushSubscriptionJSON =>
-            Boolean(item && typeof item === 'object' && 'endpoint' in (item as Record<string, unknown>))
-        )
+    const subs: StoredPushSubscription[] = Array.isArray(data?.value)
+      ? data.value.filter(isStoredPushSubscription).filter((item) => item.active !== false)
       : []
 
     if (subs.length === 0) {
@@ -83,15 +99,15 @@ export async function POST(request: Request) {
       })
     )
 
+    const cleaned = subs.filter((s) => !stale.includes(s.endpoint))
     if (stale.length > 0) {
-      const cleaned = subs.filter((s) => !stale.includes(s.endpoint))
       await (admin as any).from('site_settings').upsert(
         { key: 'push_subscriptions', value: cleaned },
         { onConflict: 'key' }
       )
     }
 
-    return NextResponse.json({ success: true, sent, total: subs.length, failed })
+    return NextResponse.json({ success: true, sent, total: cleaned.length, failed })
   } catch (err) {
     console.error('Push broadcast error:', err)
     return NextResponse.json({ error: 'Failed to send notifications' }, { status: 500 })

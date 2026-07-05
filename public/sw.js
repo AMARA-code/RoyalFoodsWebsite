@@ -86,6 +86,7 @@ self.addEventListener('push', (event) => {
       badge: '/icon-192.png',
       tag: 'royal-foods-offer',
       renotify: true,
+      actions: [],
       data: { url: data.url || '/' },
       vibrate: [100, 50, 100],
     })
