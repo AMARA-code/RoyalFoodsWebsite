@@ -59,15 +59,26 @@ export async function POST(request: Request) {
     const payload = JSON.stringify({ title, body, url: url || '/' })
     let sent = 0
     const stale: string[] = []
+    const failed: Array<{ endpoint: string; reason: string }> = []
 
     await Promise.all(
       subs.map(async (sub) => {
         try {
-          await webpush.sendNotification(sub, payload)
+          await webpush.sendNotification(sub, payload, {
+            TTL: 60,
+            urgency: 'high',
+            topic: 'royal-foods-offer',
+          })
           sent++
         } catch (err: unknown) {
           const status = (err as { statusCode?: number })?.statusCode
-          if (status === 404 || status === 410) stale.push(sub.endpoint)
+          const reason = (err as Error)?.message ?? 'Unknown push error'
+          if (status === 404 || status === 410) {
+            stale.push(sub.endpoint)
+          } else {
+            failed.push({ endpoint: sub.endpoint, reason })
+          }
+          console.error('Push send failed for endpoint', sub.endpoint, err)
         }
       })
     )
@@ -80,7 +91,7 @@ export async function POST(request: Request) {
       )
     }
 
-    return NextResponse.json({ success: true, sent, total: subs.length })
+    return NextResponse.json({ success: true, sent, total: subs.length, failed })
   } catch (err) {
     console.error('Push broadcast error:', err)
     return NextResponse.json({ error: 'Failed to send notifications' }, { status: 500 })

@@ -84,9 +84,17 @@ self.addEventListener('push', (event) => {
       body: data.body,
       icon: '/icon-192.png',
       badge: '/icon-192.png',
+      tag: 'royal-foods-offer',
+      renotify: true,
       data: { url: data.url || '/' },
       vibrate: [100, 50, 100],
     })
+  )
+})
+
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    self.registration.pushManager.subscribe({ userVisibleOnly: true }).catch(() => undefined)
   )
 })
 
