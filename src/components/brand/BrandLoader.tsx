@@ -22,7 +22,9 @@ export default function BrandLoader({
       aria-live="polite"
       aria-label={`Loading ${label}`}
     >
-      <LogoMark size={size} priority animated />
+      <div className="flex items-center justify-center overflow-hidden rounded-full bg-white/70 p-2 shadow-[0_8px_30px_rgba(26,34,56,0.08)]">
+        <LogoMark size={size} priority animated />
+      </div>
       <p className="mt-4 text-sm font-semibold tracking-wide text-[#1A2238]">{label}</p>
     </div>
   )

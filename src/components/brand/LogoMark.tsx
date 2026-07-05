@@ -21,13 +21,14 @@ export default function LogoMark({
       width={size}
       height={size}
       className={[
-        'rounded-full shadow-sm',
+        'h-auto w-auto rounded-full object-contain shadow-sm',
         animated ? 'rf-logo-loader' : '',
         className,
       ]
         .filter(Boolean)
         .join(' ')}
       priority={priority}
+      style={{ width: size, height: size }}
     />
   )
 }
