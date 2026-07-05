@@ -3,7 +3,7 @@ import webpush from 'web-push'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 
-const ADMIN_EMAIL = 'amaranaeem453@gmail.com'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'amaranaeem453@gmail.com'
 
 export async function POST(request: Request) {
   try {

@@ -16,11 +16,43 @@ export default function NotificationPrompt() {
 
   useEffect(() => {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) return
+
+    if (Notification.permission === 'granted') {
+      subscribeToPush().catch(() => {
+        /* ignore subscription failures */
+      })
+      return
+    }
+
     if (Notification.permission !== 'default') return
     if (localStorage.getItem('notif-prompt-dismissed')) return
-    const t = setTimeout(() => setVisible(true), 5000)
-    return () => clearTimeout(t)
+
+    const t = window.setTimeout(() => setVisible(true), 5000)
+    return () => window.clearTimeout(t)
   }, [])
+
+  async function subscribeToPush() {
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    if (!vapidKey) return
+
+    const reg = await navigator.serviceWorker.ready
+    let subscription = await reg.pushManager.getSubscription()
+
+    if (!subscription) {
+      subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      })
+    }
+
+    if (subscription) {
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: subscription.toJSON() }),
+      })
+    }
+  }
 
   async function enable() {
     setLoading(true)
@@ -31,25 +63,7 @@ export default function NotificationPrompt() {
         return
       }
 
-      const reg = await navigator.serviceWorker.ready
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-      let subscription = await reg.pushManager.getSubscription()
-
-      if (!subscription && vapidKey) {
-        subscription = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(vapidKey),
-        })
-      }
-
-      if (subscription) {
-        await fetch('/api/push/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ subscription: subscription.toJSON() }),
-        })
-      }
-
+      await subscribeToPush()
       setVisible(false)
       localStorage.setItem('notif-prompt-dismissed', '1')
     } catch {
