@@ -252,7 +252,7 @@ export default function AdminSettingsPage() {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Failed to send')
-      toast.success(`Sent to ${json.sent} subscriber(s)`)
+      toast.success('Notification sent')
       setPushTitle('')
       setPushBody('')
     } catch (err) {
