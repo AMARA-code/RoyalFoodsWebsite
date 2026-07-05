@@ -16,6 +16,7 @@ import {
 import { useCart } from '@/hooks/useCart'
 import { createClient } from '@/lib/supabase/client'
 import { formatPrice } from '@/lib/utils'
+import { normalizeEmail } from '@/lib/email-utils'
 import { DEFAULT_SITE_CONFIG, PAYMENT_METHOD_LABELS } from '@/lib/constants'
 import type { SiteConfig } from '@/types/index'
 import type { PaymentMethod } from '@/types/database'
@@ -105,11 +106,10 @@ export default function CheckoutWizard() {
       return false
     }
     if (!form.email.trim()) {
-      toast.error('Email is required so we can save your customer profile and send order updates')
+      toast.error('Email is required so we can send order confirmation')
       return false
     }
-    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
-    if (!emailOk) {
+    if (!normalizeEmail(form.email)) {
       toast.error('Please enter a valid email address')
       return false
     }

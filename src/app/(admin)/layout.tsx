@@ -7,30 +7,23 @@ import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard,
   UtensilsCrossed,
-  Images,
-  Users,
-  UserCircle,
   Settings,
-  BookOpen,
   ShoppingBag,
-  CalendarDays,
-  BarChart3,
+  Users,
   LogOut,
   Menu as MenuIcon,
   X,
+  Loader2,
 } from 'lucide-react'
+
+const ADMIN_EMAIL = 'amaranaeem453@gmail.com'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-  { href: '/admin/customers', label: 'Customers', icon: UserCircle },
-  { href: '/admin/reservations', label: 'Reservations', icon: CalendarDays },
-  { href: '/admin/menu', label: 'Menu Manager', icon: UtensilsCrossed },
-  { href: '/admin/gallery', label: 'Gallery', icon: Images },
-  { href: '/admin/chefs', label: 'Team', icon: Users },
-  { href: '/admin/blog', label: 'Blog & Events', icon: BookOpen },
-  { href: '/admin/revenue', label: 'Revenue', icon: BarChart3 },
-  { href: '/admin/settings', label: 'Site Settings', icon: Settings },
+  { href: '/admin/customers', label: 'Customers', icon: Users },
+  { href: '/admin/menu', label: 'Menu', icon: UtensilsCrossed },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -49,7 +42,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        router.replace('/admin/login')
+        router.replace('/signin?redirect=/admin')
+      } else if (session.user.email !== ADMIN_EMAIL) {
+        router.replace('/')
       } else {
         setAdminEmail(session.user.email ?? '')
         setLoading(false)
@@ -63,32 +58,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    router.replace('/admin/login')
+    router.replace('/signin')
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--accent-gold)', borderTopColor: 'transparent' }} />
-          <p style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', letterSpacing: '0.1em' }}>
-            AUTHENTICATING
-          </p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF7F2]">
+        <Loader2 size={28} className="animate-spin text-[#D62828]" />
       </div>
     )
   }
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        height: '100vh',
-        overflow: 'hidden',
-        background: 'var(--bg-primary)',
-        fontFamily: 'var(--font-sans)',
-      }}
-    >
+    <div className="flex h-screen overflow-hidden bg-[#FAF7F2]">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -100,47 +82,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-30 lg:static lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-30 lg:static lg:translate-x-0 h-screen w-[240px] min-w-[240px] flex flex-col bg-white border-r border-gray-200 transition-transform ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{
-          width: '260px',
-          minWidth: '260px',
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          background: 'var(--bg-secondary)',
-          borderRight: '1px solid rgba(201,168,76,0.12)',
-          transition: 'transform 0.3s',
-        }}
       >
         {/* Logo area */}
-        <div
-          className="flex items-center justify-between px-6 py-5"
-          style={{ borderBottom: '1px solid rgba(201,168,76,0.12)', flexShrink: 0 }}
-        >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <div>
-            <p
-              style={{
-                fontFamily: 'var(--font-serif)',
-                fontSize: '1.5rem',
-                letterSpacing: '0.12em',
-                color: 'var(--accent-gold)',
-                lineHeight: 1,
-              }}
-            >
-              ÉCLAT
-            </p>
-            <p
-              style={{
-                fontSize: '0.62rem',
-                letterSpacing: '0.18em',
-                color: 'var(--text-secondary)',
-                marginTop: '2px',
-              }}
-            >
-              ADMIN PANEL
-            </p>
+            <p className="text-sm font-bold text-[#D62828]">Royal Foods</p>
+            <p className="text-[10px] tracking-wide text-gray-400 uppercase">Admin</p>
           </div>
           <button
             className="lg:hidden p-1"
@@ -152,7 +102,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Nav — scrolls independently */}
-        <nav style={{ flex: 1, overflowY: 'auto', paddingTop: '1rem', paddingBottom: '1rem' }}>
+        <nav className="flex-1 overflow-y-auto py-4">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || (href !== '/admin' && pathname.startsWith(href))
             return (
@@ -160,18 +110,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={href}
                 href={href}
                 onClick={() => setSidebarOpen(false)}
-                className="flex items-center gap-3 px-6 py-3 mx-2 rounded-lg transition-all duration-200"
-                style={{
-                  background: active ? 'rgba(201,168,76,0.1)' : 'transparent',
-                  borderLeft: active ? '2px solid var(--accent-gold)' : '2px solid transparent',
-                  color: active ? 'var(--accent-gold)' : 'var(--text-secondary)',
-                  fontSize: '0.8rem',
-                  letterSpacing: '0.06em',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                }}
+                className={`flex items-center gap-3 px-5 py-2.5 mx-2 rounded-lg text-sm transition-colors no-underline ${
+                  active
+                    ? 'bg-[#D62828]/10 text-[#D62828] font-medium border-l-2 border-[#D62828]'
+                    : 'text-gray-500 hover:bg-gray-50 border-l-2 border-transparent'
+                }`}
               >
                 <Icon size={16} strokeWidth={active ? 2 : 1.5} />
                 <span>{label}</span>
@@ -180,23 +123,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* User + logout */}
-        <div
-          className="px-6 py-4"
-          style={{ borderTop: '1px solid rgba(201,168,76,0.12)', flexShrink: 0 }}
-        >
-          <p
-            className="truncate mb-3"
-            style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', letterSpacing: '0.04em' }}
-          >
-            {adminEmail}
-          </p>
+        <div className="px-5 py-4 border-t border-gray-100 shrink-0">
+          <p className="truncate mb-3 text-xs text-gray-400">{adminEmail}</p>
           <button
+            type="button"
             onClick={handleLogout}
-            className="flex items-center gap-2 w-full text-left transition-colors duration-200"
-            style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', letterSpacing: '0.06em' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-crimson)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+            className="flex items-center gap-2 w-full text-left text-sm text-gray-500 hover:text-[#D62828] transition-colors"
           >
             <LogOut size={14} />
             Sign Out
@@ -204,29 +136,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* Main — scrolls independently */}
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          minWidth: 0,
-          height: '100vh',
-          overflowY: 'auto',
-        }}
-      >
-        {/* Top bar */}
-        <header
-          className="flex items-center gap-4 px-6 py-4"
-          style={{
-            background: 'var(--bg-secondary)',
-            borderBottom: '1px solid rgba(201,168,76,0.12)',
-            position: 'sticky',
-            top: 0,
-            zIndex: 10,
-            flexShrink: 0,
-          }}
-        >
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+        <header className="sticky top-0 z-10 flex items-center gap-4 px-6 py-4 bg-white border-b border-gray-200 shrink-0">
           <button
             className="lg:hidden p-1"
             onClick={() => setSidebarOpen(true)}

@@ -62,22 +62,15 @@ function SignInContent() {
       transition={{ duration: 0.5, ease: 'easeOut' }}
       className="relative w-full max-w-md"
     >
-      <div className="card-eclat p-8 md:p-10 border border-[var(--border-subtle)]">
+      <div className="bg-white rounded-2xl p-8 md:p-10 border border-gray-200 shadow-sm">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-block mb-6 group">
-            <span
-              className="text-heading-lg text-[var(--text-primary)] tracking-[0.12em] group-hover:text-[var(--accent-gold)] transition-colors"
-              style={{ fontFamily: 'var(--font-serif)' }}
-            >
-              Éclat
-            </span>
-            <span className="block text-label text-[var(--text-muted)] tracking-[0.3em] text-[0.6rem] mt-0.5">Fine Dining</span>
+          <Link href="/" className="inline-flex flex-col items-center mb-6">
+            <img src="/images/royal-foods-logo.png" alt="Royal Foods" className="w-16 h-16 rounded-full mb-2" />
+            <span className="font-bold text-[#1A2238] text-lg">Royal Foods</span>
+            <span className="text-gray-500 text-xs">Order Online</span>
           </Link>
-          <div className="divider-gold mb-6" />
-          <h1 className="text-heading-md text-[var(--text-primary)] mb-2" style={{ fontFamily: 'var(--font-serif)' }}>
-            Welcome Back
-          </h1>
-          <p className="text-[var(--text-muted)] text-sm">
+          <h1 className="text-xl font-bold text-[#1A2238] mb-2">Welcome Back</h1>
+          <p className="text-gray-500 text-sm">
             Sign in to your Éclat account
           </p>
         </div>
