@@ -40,7 +40,13 @@ export async function POST(request: Request) {
       .eq('key', 'push_subscriptions')
       .maybeSingle()
 
-    const subs = Array.isArray(data?.value) ? data.value : []
+    const subs = Array.isArray(data?.value)
+      ? data.value.filter(
+          (item: unknown): item is { endpoint: string; keys: { p256dh: string; auth: string } } =>
+            Boolean(item && typeof item === 'object' && 'endpoint' in (item as Record<string, unknown>))
+        )
+      : []
+
     if (subs.length === 0) {
       return NextResponse.json({ error: 'No subscribers yet' }, { status: 400 })
     }
@@ -50,7 +56,7 @@ export async function POST(request: Request) {
     const stale: string[] = []
 
     await Promise.all(
-      subs.map(async (sub: { endpoint: string; keys: { p256dh: string; auth: string } }) => {
+      subs.map(async (sub) => {
         try {
           await webpush.sendNotification(sub, payload)
           sent++
@@ -62,7 +68,7 @@ export async function POST(request: Request) {
     )
 
     if (stale.length > 0) {
-      const cleaned = subs.filter((s: { endpoint: string }) => !stale.includes(s.endpoint))
+      const cleaned = subs.filter((s) => !stale.includes(s.endpoint))
       await (admin as any).from('site_settings').upsert(
         { key: 'push_subscriptions', value: cleaned },
         { onConflict: 'key' }

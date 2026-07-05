@@ -2,13 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Bell, X } from 'lucide-react'
-
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const raw = window.atob(base64)
-  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)))
-}
+import { ensurePushSubscription } from '@/lib/push'
 
 export default function NotificationPrompt() {
   const [visible, setVisible] = useState(false)
@@ -18,7 +12,7 @@ export default function NotificationPrompt() {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) return
 
     if (Notification.permission === 'granted') {
-      subscribeToPush().catch(() => {
+      ensurePushSubscription().catch(() => {
         /* ignore subscription failures */
       })
       return
@@ -31,29 +25,6 @@ export default function NotificationPrompt() {
     return () => window.clearTimeout(t)
   }, [])
 
-  async function subscribeToPush() {
-    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-    if (!vapidKey) return
-
-    const reg = await navigator.serviceWorker.ready
-    let subscription = await reg.pushManager.getSubscription()
-
-    if (!subscription) {
-      subscription = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
-      })
-    }
-
-    if (subscription) {
-      await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription: subscription.toJSON() }),
-      })
-    }
-  }
-
   async function enable() {
     setLoading(true)
     try {
@@ -63,7 +34,7 @@ export default function NotificationPrompt() {
         return
       }
 
-      await subscribeToPush()
+      await ensurePushSubscription()
       setVisible(false)
       localStorage.setItem('notif-prompt-dismissed', '1')
     } catch {

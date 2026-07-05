@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { ensurePushSubscription } from '@/lib/push'
 
 export default function ServiceWorkerRegister() {
   useEffect(() => {
@@ -10,6 +11,10 @@ export default function ServiceWorkerRegister() {
       .register('/sw.js')
       .then((registration) => {
         registration.update()
+
+        ensurePushSubscription().catch(() => {
+          /* subscription is optional until permission is granted */
+        })
       })
       .catch(() => {
         /* registration failed silently */
