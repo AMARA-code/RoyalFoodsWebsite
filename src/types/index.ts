@@ -7,6 +7,7 @@ export interface CartItem {
   price: number
   quantity: number
   image_url: string | null
+  instructions?: string
 }
 
 export interface CartState {

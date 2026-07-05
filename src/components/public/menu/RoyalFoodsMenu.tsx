@@ -2,17 +2,19 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
+import { motion } from 'framer-motion'
 import { Minus, Plus, Search, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { MenuItem, MenuCategory } from '@/types/database'
 import { useCartStore, selectCartItems } from '@/store/cartStore'
 import { usePublicSettings } from '@/hooks/usePublicSettings'
 import { formatPrice } from '@/lib/utils'
+import MenuItemModal from './MenuItemModal'
 
 function SkeletonCard() {
   return (
     <div className="flex gap-3 p-3 bg-white rounded-2xl border border-gray-100 animate-pulse">
-      <div className="w-[110px] h-[110px] rounded-xl bg-gray-100 shrink-0" />
+      <div className="w-[110px] h-[110px] rounded-xl bg-gray-100 shrink-0"/>
       <div className="flex-1 space-y-2 py-1">
         <div className="h-4 w-3/4 rounded bg-gray-100" />
         <div className="h-5 w-20 rounded bg-gray-100" />
@@ -29,6 +31,7 @@ function MenuItemCard({
   item: MenuItem
   promoPercent: number
 }) {
+  const [showModal, setShowModal] = useState(false)
   const cartItems = useCartStore(selectCartItems)
   const addItem = useCartStore((s) => s.addItem)
   const updateQuantity = useCartStore((s) => s.updateQuantity)
@@ -38,80 +41,114 @@ function MenuItemCard({
   const salePrice = hasDiscount ? Math.round(item.price * (1 - promoPercent / 100)) : item.price
 
   return (
-    <article className="flex gap-3 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-      <div className="relative w-[110px] h-[110px] rounded-xl overflow-hidden shrink-0 bg-gray-50">
-        <Image
-          src={item.image_url ?? '/images/hero-bg.jpg.jpg'}
-          alt={item.name}
-          fill
-          className="object-cover"
-          sizes="110px"
-        />
-      </div>
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-50px' }}
+        transition={{ duration: 0.5 }}
+        onClick={() => setShowModal(true)}
+        className="cursor-pointer"
+        role="button"
+        tabIndex={0}
+        aria-label={`View details for ${item.name}`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setShowModal(true)
+          }
+        }}
+      >
+        <article className="flex gap-3 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+          <div className="relative w-[110px] h-[110px] rounded-xl overflow-hidden shrink-0 bg-gray-50">
+            <Image
+              src={item.image_url ?? '/images/hero-bg.jpg.jpg'}
+              alt={item.name}
+              fill
+              className="object-cover"
+              sizes="110px"
+            />
+          </div>
 
-      <div className="flex-1 flex flex-col min-w-0 py-0.5">
-        <h3 className="font-bold text-[#1A2238] text-[15px] leading-snug">
-          {item.name}
-        </h3>
-        {item.description && (
-          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{item.description}</p>
-        )}
+          <div className="flex-1 flex flex-col min-w-0 py-0.5">
+            <h3 className="font-bold text-[#1A2238] text-[15px] leading-snug">
+              {item.name}
+            </h3>
+            {item.description && (
+              <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{item.description}</p>
+            )}
 
-        <div className="flex items-center gap-2 mt-2 mb-2">
-          {hasDiscount ? (
-            <>
-              <span className="text-xs text-gray-400 line-through">{formatPrice(item.price)}</span>
-              <span className="inline-block px-2.5 py-0.5 rounded-md bg-[#D62828] text-white text-xs font-bold">
-                {formatPrice(salePrice)}
-              </span>
-            </>
-          ) : (
-            <span className="inline-block px-2.5 py-0.5 rounded-md bg-[#D62828] text-white text-xs font-bold">
-              {formatPrice(item.price)}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 mt-auto">
-          {qty > 0 ? (
-            <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
-              <button
-                type="button"
-                onClick={() => updateQuantity(item.id, qty - 1)}
-                className="w-8 h-8 flex items-center justify-center text-[#1A2238] hover:bg-gray-200 transition-colors"
-                aria-label="Decrease quantity"
-              >
-                <Minus size={14} />
-              </button>
-              <span className="w-7 text-center text-sm font-bold text-[#1A2238]">{qty}</span>
-              <button
-                type="button"
-                onClick={() => updateQuantity(item.id, qty + 1)}
-                className="w-8 h-8 flex items-center justify-center text-[#1A2238] hover:bg-gray-200 transition-colors"
-                aria-label="Increase quantity"
-              >
-                <Plus size={14} />
-              </button>
+            <div className="flex items-center gap-2 mt-2 mb-2">
+              {hasDiscount ? (
+                <>
+                  <span className="text-xs text-gray-400 line-through">{formatPrice(item.price)}</span>
+                  <span className="inline-block px-2.5 py-0.5 rounded-md bg-[#D62828] text-white text-xs font-bold">
+                    {formatPrice(salePrice)}
+                  </span>
+                </>
+              ) : (
+                <span className="inline-block px-2.5 py-0.5 rounded-md bg-[#D62828] text-white text-xs font-bold">
+                  {formatPrice(item.price)}
+                </span>
+              )}
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() =>
-                addItem({
-                  id: item.id,
-                  name: item.name,
-                  price: item.price,
-                  image_url: item.image_url,
-                })
-              }
-              className="px-4 py-2 rounded-lg bg-[#1A2238] text-white text-xs font-bold hover:bg-[#2a3450] transition-colors"
-            >
-              Add To Cart
-            </button>
-          )}
-        </div>
-      </div>
-    </article>
+
+            <div className="flex items-center gap-2 mt-auto">
+              {qty > 0 ? (
+                <div
+                  className="flex items-center rounded-lg border border-gray-200 overflow-hidden bg-gray-50"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      updateQuantity(item.id, qty - 1)
+                    }}
+                    className="w-8 h-8 flex items-center justify-center text-[#1A2238] hover:bg-gray-200 transition-colors"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus size={14} />
+                  </button>
+                  <span className="w-7 text-center text-sm font-bold text-[#1A2238]">{qty}</span>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      updateQuantity(item.id, qty + 1)
+                    }}
+                    className="w-8 h-8 flex items-center justify-center text-[#1A2238] hover:bg-gray-200 transition-colors"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    addItem({
+                      id: item.id,
+                      name: item.name,
+                      price: item.price,
+                      image_url: item.image_url,
+                    })
+                  }}
+                  className="px-4 py-2 rounded-lg bg-[#1A2238] text-white text-xs font-bold hover:bg-[#2a3450] transition-colors"
+                >
+                  Add To Cart
+                </button>
+              )}
+            </div>
+          </div>
+        </article>
+      </motion.div>
+
+      {showModal && (
+        <MenuItemModal item={item} onClose={() => setShowModal(false)} />
+      )}
+    </>
   )
 }
 
@@ -342,7 +379,7 @@ export default function RoyalFoodsMenu() {
 
         {!loading && error && (
           <div className="text-center py-20">
-            <p className="text-lg font-bold text-[#1A2238] mb-2">Could not load menu</p>
+            <p className="text-lg font-bold text-[#1A2238] mb-2">Could notload menu</p>
             <p className="text-sm text-gray-500 mb-6">{error}</p>
             <button
               type="button"

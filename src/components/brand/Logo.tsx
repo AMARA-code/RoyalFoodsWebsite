@@ -11,20 +11,20 @@ interface LogoProps {
 }
 
 export default function Logo({
-  size = 40,
+  size = 30,
   showText = true,
   showSubtitle = true,
   href = '/',
   className = '',
 }: LogoProps) {
   const content = (
-    <div className={`flex items-center gap-2.5 ${className}`}>
+    <div className={`flex items-center gap-3 ${className}`}>
       <LogoMark size={size} priority />
       {showText && (
         <div className="hidden sm:block leading-tight">
-          <span className="font-bold text-[#1A2238] text-sm">{ROYAL_FOODS.name}</span>
+          <span className="font-bold text-[#1A2238] text-[15px]">{ROYAL_FOODS.name}</span>
           {showSubtitle && (
-            <span className="block text-[10px] text-gray-500">{ROYAL_FOODS.specialty}</span>
+            <span className="block text-[11px] text-gray-500">{ROYAL_FOODS.specialty}</span>
           )}
         </div>
       )}

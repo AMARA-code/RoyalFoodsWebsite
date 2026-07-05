@@ -54,7 +54,7 @@
     --container-max: 1200px;
 
     /* ── Fixed header (navbar + optional ticker) ── */
-    --rf-header-nav-h: 3rem;
+    --rf-header-nav-h: 4.75rem;
     --rf-header-ticker-h: 2.625rem;
     --rf-header-offset: var(--rf-header-nav-h);
     --rf-header-offset-banner: calc(var(--rf-header-nav-h) + var(--rf-header-ticker-h));
@@ -547,8 +547,10 @@
 }
 
 .rf-boot-splash img {
-  width: 112px;
-  height: 112px;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
   border-radius: 9999px;
   box-shadow: 0 2px 12px rgba(26, 34, 56, 0.08);
   animation: rf-logo-pulse 1.4s ease-in-out infinite;

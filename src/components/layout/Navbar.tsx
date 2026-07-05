@@ -33,7 +33,7 @@ export default function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
         className="max-w-6xl mx-auto px-3 sm:px-4 flex items-center justify-between h-[var(--rf-header-nav-h)] gap-2"
         aria-label="Main navigation"
       >
-        <Logo size={32} showSubtitle={false} />
+        <Logo size={72} showSubtitle={false} />
 
         <div className="flex-1" aria-hidden="true" />
 

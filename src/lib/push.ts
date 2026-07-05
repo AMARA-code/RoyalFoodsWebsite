@@ -21,14 +21,7 @@ export async function ensurePushSubscription(forceRequest = false) {
   const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
   if (!vapidKey) return null
 
-  let registration = await navigator.serviceWorker.getRegistration()
-  if (!registration) {
-    registration = await navigator.serviceWorker.register('/sw.js')
-  }
-
-  await navigator.serviceWorker.ready
-  await registration.update().catch(() => undefined)
-
+  const registration = await navigator.serviceWorker.ready
   let subscription = await registration.pushManager.getSubscription()
 
   if (!subscription) {
@@ -47,7 +40,6 @@ export async function ensurePushSubscription(forceRequest = false) {
   })
 
   if (!response.ok) {
-    await subscription.unsubscribe().catch(() => undefined)
     throw new Error('Failed to persist push subscription')
   }
 
