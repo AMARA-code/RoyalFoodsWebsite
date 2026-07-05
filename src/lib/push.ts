@@ -5,18 +5,30 @@ export function urlBase64ToUint8Array(base64String: string) {
   return Uint8Array.from([...raw].map((char) => char.charCodeAt(0)))
 }
 
-export async function ensurePushSubscription() {
+export async function ensurePushSubscription(forceRequest = false) {
   if (typeof window === 'undefined') return null
   if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
     return null
   }
 
-  if (Notification.permission !== 'granted') return null
+  if (forceRequest && Notification.permission === 'default') {
+    const permission = await Notification.requestPermission()
+    if (permission !== 'granted') return null
+  } else if (Notification.permission !== 'granted') {
+    return null
+  }
 
   const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
   if (!vapidKey) return null
 
-  const registration = await navigator.serviceWorker.ready
+  let registration = await navigator.serviceWorker.getRegistration()
+  if (!registration) {
+    registration = await navigator.serviceWorker.register('/sw.js')
+  }
+
+  await navigator.serviceWorker.ready
+  await registration.update().catch(() => undefined)
+
   let subscription = await registration.pushManager.getSubscription()
 
   if (!subscription) {
@@ -35,6 +47,7 @@ export async function ensurePushSubscription() {
   })
 
   if (!response.ok) {
+    await subscription.unsubscribe().catch(() => undefined)
     throw new Error('Failed to persist push subscription')
   }
 

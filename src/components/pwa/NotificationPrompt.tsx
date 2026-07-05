@@ -34,7 +34,7 @@ export default function NotificationPrompt() {
         return
       }
 
-      await ensurePushSubscription()
+      await ensurePushSubscription(true)
       setVisible(false)
       localStorage.setItem('notif-prompt-dismissed', '1')
     } catch {
