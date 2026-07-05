@@ -125,3 +125,27 @@ export async function POST() {
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
   }
 }
+
+/** Remove all customer records. */
+export async function DELETE() {
+  try {
+    const supabase = await createAdminClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    const { error } = await db
+      .from('customers')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000')
+
+    if (error) {
+      console.error('Customers delete:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error('Admin customers DELETE:', err)
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+  }
+}

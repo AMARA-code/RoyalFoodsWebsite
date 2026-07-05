@@ -4,9 +4,9 @@ export function cn(...inputs: ClassValue[]) {
   return inputs.filter(Boolean).join(' ')
 }
 
-// Format price — converts number to display string
+// Format price — Pakistani Rupees
 export function formatPrice(price: number): string {
-  return `$${price.toLocaleString()}`
+  return `Rs. ${price.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 // Format date
 export function formatDate(dateString: string): string {
@@ -36,7 +36,7 @@ export function truncate(text: string, length: number): string {
 export function generateOrderRef(): string {
   const timestamp = Date.now().toString(36).toUpperCase()
   const random = Math.random().toString(36).substring(2, 5).toUpperCase()
-  return `ECL-${timestamp}-${random}`
+  return `RF-${timestamp}-${random}`
 }
 
 // Generate booking reference number

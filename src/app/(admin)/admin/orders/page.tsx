@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import PaymentScreenshotImage from '@/components/admin/PaymentScreenshotImage'
 import { formatPrice } from '@/lib/utils'
 import type { Order, OrderStatus, PaymentMethod } from '@/types/database'
+import toast from 'react-hot-toast'
+import { normalizeEmail } from '@/lib/email-utils'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface OrderWithItems extends Order {
@@ -66,6 +68,7 @@ function OrderModal({
   const cfg = STATUS_CONFIG[order.status]
   const isLocked = order.status === 'delivered' || order.status === 'cancelled'
   const isDigital = order.payment_method === 'easypaisa' || order.payment_method === 'jazzcash'
+  const hasValidEmail = Boolean(normalizeEmail(order.customer_email))
   const [status, setStatus] = useState<OrderStatus>(order.status)
   const [updating, setUpdating] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -79,7 +82,12 @@ function OrderModal({
     })
     const json = await res.json()
     if (!res.ok) throw new Error(json.error ?? 'Update failed')
-    if (json.emailError) setEmailNote(json.emailError)
+    if (json.emailError) {
+      setEmailNote(json.emailError)
+      toast.error(json.emailError)
+    } else if (body.action === 'confirm_order' || body.status === 'confirmed') {
+      toast.success('Order confirmed — confirmation email sent')
+    }
     return json.data as OrderWithItems
   }
 
@@ -174,9 +182,12 @@ function OrderModal({
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div><span style={{ color: 'var(--text-secondary)' }}>Name</span><p style={{ color: 'var(--text-primary)' }}>{order.customer_name}</p></div>
               <div><span style={{ color: 'var(--text-secondary)' }}>Phone</span><p style={{ color: 'var(--text-primary)' }}>{order.customer_phone}</p></div>
-              {order.customer_email && (
-                <div className="col-span-2"><span style={{ color: 'var(--text-secondary)' }}>Email</span><p style={{ color: 'var(--text-primary)' }}>{order.customer_email}</p></div>
-              )}
+              <div className="col-span-2">
+                <span style={{ color: 'var(--text-secondary)' }}>Email</span>
+                <p style={{ color: hasValidEmail ? 'var(--text-primary)' : '#e09050' }}>
+                  {hasValidEmail ? order.customer_email : 'Not provided — confirmation email cannot be sent'}
+                </p>
+              </div>
               <div className="col-span-2"><span style={{ color: 'var(--text-secondary)' }}>Address</span><p style={{ color: 'var(--text-primary)' }}>{order.delivery_address}</p></div>
             </div>
           </div>
@@ -242,9 +253,15 @@ function OrderModal({
               {!isLocked && order.payment_method === 'cod' && order.status === 'pending' && (
                 <button
                   onClick={handleConfirmCod}
-                  disabled={updating}
+                  disabled={updating || !hasValidEmail}
+                  title={!hasValidEmail ? 'Customer email is required to send confirmation' : undefined}
                   className="px-4 py-2 rounded text-sm font-semibold"
-                  style={{ background: 'rgba(201,168,76,0.15)', color: 'var(--accent-gold)', border: '1px solid rgba(201,168,76,0.35)' }}
+                  style={{
+                    background: 'rgba(201,168,76,0.15)',
+                    color: 'var(--accent-gold)',
+                    border: '1px solid rgba(201,168,76,0.35)',
+                    opacity: updating || !hasValidEmail ? 0.6 : 1,
+                  }}
                 >
                   {updating ? 'Processing…' : 'Confirm Order (send email)'}
                 </button>
@@ -323,6 +340,7 @@ export default function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all')
   const [paymentFilter, setPaymentFilter] = useState<PaymentMethod | 'all'>('all')
   const [search, setSearch] = useState('')
+  const [clearing, setClearing] = useState(false)
   const supabase = createClient()
 
   const fetchOrders = useCallback(async () => {
@@ -357,6 +375,24 @@ export default function AdminOrdersPage() {
     setSelected((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev))
   }
 
+  async function clearAllOrders() {
+    if (orders.length === 0) return
+    if (!window.confirm(`Delete all ${orders.length} orders? This cannot be undone.`)) return
+    setClearing(true)
+    try {
+      const res = await fetch('/api/admin/orders', { method: 'DELETE' })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Failed to clear orders')
+      setOrders([])
+      setSelected(null)
+      toast.success('All orders removed')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to clear orders')
+    } finally {
+      setClearing(false)
+    }
+  }
+
   const filtered = orders.filter(o => {
     if (statusFilter !== 'all' && o.status !== statusFilter) return false
     if (paymentFilter !== 'all' && o.payment_method !== paymentFilter) return false
@@ -379,10 +415,22 @@ export default function AdminOrdersPage() {
   return (
     <div className="min-h-screen px-4 py-6 md:px-6 lg:px-8" style={{ background: 'var(--bg-primary)' }}>
       {/* Header */}
-      <div className="mb-8">
-        <p className="text-label mb-1" style={{ color: 'var(--accent-gold)' }}>ADMIN CRM</p>
-        <h1 className="text-heading-xl" style={{ color: 'var(--text-primary)' }}>Orders Panel</h1>
-        <div className="divider-gold mt-3" style={{ width: '60px' }} />
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-label mb-1" style={{ color: 'var(--accent-gold)' }}>ADMIN CRM</p>
+          <h1 className="text-heading-xl" style={{ color: 'var(--text-primary)' }}>Orders Panel</h1>
+          <div className="divider-gold mt-3" style={{ width: '60px' }} />
+        </div>
+        {orders.length > 0 && (
+          <button
+            type="button"
+            onClick={clearAllOrders}
+            disabled={clearing}
+            className="px-3 py-2 rounded-lg text-xs font-medium text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 disabled:opacity-50"
+          >
+            {clearing ? 'Clearing…' : 'Clear all orders'}
+          </button>
+        )}
       </div>
 
       {/* Supabase error banner */}

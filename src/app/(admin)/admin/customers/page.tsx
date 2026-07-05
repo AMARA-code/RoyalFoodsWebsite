@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { RefreshCw, Mail, Search, Users } from 'lucide-react'
+import { RefreshCw, Mail, Search, Users, Trash2 } from 'lucide-react'
 import { formatPrice, formatDate } from '@/lib/utils'
 import type { Customer } from '@/types/database'
+import toast from 'react-hot-toast'
 
 type CustomerRow = Customer & {
   live_order_count: number
@@ -24,6 +25,7 @@ export default function AdminCustomersPage() {
   const [search, setSearch] = useState('')
   const [emailOnly, setEmailOnly] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [clearing, setClearing] = useState(false)
 
   const fetchCustomers = useCallback(async () => {
     setError(null)
@@ -59,6 +61,24 @@ export default function AdminCustomersPage() {
     }
   }
 
+  async function clearAllCustomers() {
+    if (customers.length === 0) return
+    if (!window.confirm(`Delete all ${customers.length} customer records? This cannot be undone.`)) return
+    setClearing(true)
+    try {
+      const res = await fetch('/api/admin/customers', { method: 'DELETE' })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Failed to clear customers')
+      setCustomers([])
+      setStats({ total: 0, withEmail: 0, totalOrders: 0, totalSpent: 0 })
+      toast.success('All customers removed')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to clear customers')
+    } finally {
+      setClearing(false)
+    }
+  }
+
   const filtered = customers.filter((c) => {
     if (emailOnly && !c.email?.trim()) return false
     if (!search.trim()) return true
@@ -86,20 +106,33 @@ export default function AdminCustomersPage() {
           </p>
           <div className="divider-gold mt-3" style={{ width: '60px' }} />
         </div>
-        <button
-          type="button"
-          onClick={handleSync}
-          disabled={syncing}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm"
-          style={{
-            border: '1px solid rgba(201,168,76,0.35)',
-            color: 'var(--accent-gold)',
-            opacity: syncing ? 0.6 : 1,
-          }}
-        >
-          <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
-          {syncing ? 'Syncing…' : 'Sync counts from orders'}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {customers.length > 0 && (
+            <button
+              type="button"
+              onClick={clearAllCustomers}
+              disabled={clearing}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 disabled:opacity-50"
+            >
+              <Trash2 size={14} />
+              {clearing ? 'Clearing…' : 'Clear all customers'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm"
+            style={{
+              border: '1px solid rgba(201,168,76,0.35)',
+              color: 'var(--accent-gold)',
+              opacity: syncing ? 0.6 : 1,
+            }}
+          >
+            <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+            {syncing ? 'Syncing…' : 'Sync counts from orders'}
+          </button>
+        </div>
       </div>
 
       {error && (

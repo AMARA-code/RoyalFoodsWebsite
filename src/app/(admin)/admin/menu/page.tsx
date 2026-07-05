@@ -217,10 +217,10 @@ export default function AdminMenuPage() {
   const getCatName = (id: string) => categories.find(c => c.id === id)?.name ?? '—'
 
   return (
-    <div style={{ fontFamily: 'var(--font-sans)' }}>
+    <div style={{ fontFamily: 'var(--font-sans)' }} className="min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div className="min-w-0">
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.8rem', color: 'var(--text-primary)', letterSpacing: '0.04em' }}>
             Menu Manager
           </h1>
@@ -228,15 +228,15 @@ export default function AdminMenuPage() {
             {items.length} items across {categories.length} categories
           </p>
         </div>
-        <button onClick={openCreate} className="btn-gold flex items-center gap-2">
+        <button onClick={openCreate} className="btn-gold flex items-center justify-center gap-2 shrink-0 w-full sm:w-auto">
           <Plus size={15} /> Add Item
         </button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-5">
+      <div className="flex flex-col gap-3 mb-5 min-w-0">
         {/* Search */}
-        <div className="relative flex-1 min-w-48 max-w-xs">
+        <div className="relative w-full sm:max-w-xs">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-secondary)' }} />
           <input
             className="input-eclat w-full pl-9"
@@ -246,13 +246,14 @@ export default function AdminMenuPage() {
           />
         </div>
 
-        {/* Category tabs */}
-        <div className="flex flex-wrap gap-2">
+        {/* Category tabs — horizontal scroll */}
+        <div className="admin-menu-scroll -mx-1 px-1 overflow-x-auto pb-1">
+          <div className="flex flex-nowrap gap-2 min-w-max">
           {[{ id: 'all', name: 'All' }, ...categories].map(cat => (
             <button
               key={cat.id}
               onClick={() => setActiveCat(cat.id)}
-              className="px-3 py-1.5 rounded-lg transition-all text-xs"
+              className="px-3 py-1.5 rounded-lg transition-all text-xs shrink-0"
               style={{
                 background: activeCat === cat.id ? 'rgba(201,168,76,0.15)' : 'var(--bg-card)',
                 border: `1px solid ${activeCat === cat.id ? 'rgba(201,168,76,0.4)' : 'rgba(255,255,255,0.06)'}`,
@@ -264,12 +265,13 @@ export default function AdminMenuPage() {
               {cat.name}
             </button>
           ))}
+          </div>
         </div>
       </div>
 
       {/* Table */}
       <div
-        className="rounded-xl overflow-hidden"
+        className="rounded-xl overflow-hidden min-w-0"
         style={{ background: 'var(--bg-card)', border: '1px solid rgba(201,168,76,0.12)' }}
       >
         {loading ? (
@@ -281,7 +283,8 @@ export default function AdminMenuPage() {
             No items found
           </div>
         ) : (
-          <table className="w-full">
+          <div className="admin-menu-scroll overflow-x-auto">
+          <table className="w-full min-w-[760px]">
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(201,168,76,0.12)' }}>
                 {['Item', 'Category', 'Price', 'Badge', 'Status', 'Actions'].map(h => (
@@ -424,6 +427,7 @@ export default function AdminMenuPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -477,7 +481,7 @@ export default function AdminMenuPage() {
               </div>
 
               {/* Name */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block mb-1.5" style={{ fontSize: '0.68rem', letterSpacing: '0.12em', color: 'var(--text-secondary)' }}>
                     NAME *
@@ -504,7 +508,7 @@ export default function AdminMenuPage() {
               </div>
 
               {/* Category + Badge */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block mb-1.5" style={{ fontSize: '0.68rem', letterSpacing: '0.12em', color: 'var(--text-secondary)' }}>
                     CATEGORY *

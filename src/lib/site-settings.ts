@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { DEFAULT_SITE_CONFIG } from '@/lib/constants'
+import { DEFAULT_PROMO, DEFAULT_PUBLIC_SETTINGS, parsePublicSettings, type PromoSettings } from '@/lib/promo'
 import type { SiteConfig } from '@/types/index'
 
 function parseSettingValue<T>(value: unknown, fallback: T): T {
@@ -24,6 +26,9 @@ export async function getSiteConfig(): Promise<SiteConfig> {
 
     if (map.delivery_fee != null) {
       config.delivery_fee = Number(map.delivery_fee) || DEFAULT_SITE_CONFIG.delivery_fee
+    } else if (map.delivery != null) {
+      const d = map.delivery as { fee?: number }
+      if (d.fee != null) config.delivery_fee = Number(d.fee)
     }
     if (map.min_order != null) {
       config.min_order = Number(map.min_order) || DEFAULT_SITE_CONFIG.min_order
@@ -56,5 +61,41 @@ export async function getSiteConfig(): Promise<SiteConfig> {
     return config
   } catch {
     return DEFAULT_SITE_CONFIG
+  }
+}
+
+export async function getPromoSettings(): Promise<PromoSettings> {
+  try {
+    const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase as any)
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'promo')
+      .maybeSingle()
+
+    if (!data?.value) return DEFAULT_PROMO
+    return { ...DEFAULT_PROMO, ...(data.value as PromoSettings) }
+  } catch {
+    return DEFAULT_PROMO
+  }
+}
+
+export async function getPublicSettingsFromDb() {
+  try {
+    const supabase = await createAdminClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any).from('site_settings').select('key, value')
+
+    if (error || !data?.length) {
+      return DEFAULT_PUBLIC_SETTINGS
+    }
+
+    const map = Object.fromEntries(
+      (data as { key: string; value: unknown }[]).map((row) => [row.key, row.value])
+    )
+    return parsePublicSettings(map)
+  } catch {
+    return DEFAULT_PUBLIC_SETTINGS
   }
 }

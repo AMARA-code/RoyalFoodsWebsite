@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { generateOrderRef } from '@/lib/utils'
-import { getSiteConfig } from '@/lib/site-settings'
-import { sendAdminNewOrderEmail } from '@/lib/email'
+import { getPublicSettingsFromDb } from '@/lib/site-settings'
+import { sendAdminNewOrderEmail, sendOrderReceivedEmail } from '@/lib/email'
+import { normalizeEmail } from '@/lib/email-utils'
+import { calculateOrderTotals } from '@/lib/pricing'
+import { applyDiscount } from '@/lib/promo'
 import { isDigitalPayment } from '@/lib/orders'
 import type { PaymentMethod } from '@/types/database'
 import type { CartItem } from '@/types/index'
@@ -42,6 +45,14 @@ export async function POST(request: Request) {
       )
     }
 
+    const normalizedEmail = normalizeEmail(customer_email)
+    if (!normalizedEmail) {
+      return NextResponse.json(
+        { error: 'A valid email address is required for order confirmation' },
+        { status: 400 }
+      )
+    }
+
     if (!['easypaisa', 'jazzcash', 'cod'].includes(payment_method)) {
       return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 })
     }
@@ -50,18 +61,46 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
     }
 
-    const siteConfig = await getSiteConfig()
-    const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
-
-    const delivery_fee = siteConfig.delivery_fee
-    const total_amount = subtotal + delivery_fee
-    const order_ref = generateOrderRef()
+    const pricingSettings = await getPublicSettingsFromDb()
 
     const supabase = await createAdminClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = supabase as any
 
-    const normalizedEmail = customer_email?.trim().toLowerCase() || null
+    const itemIds = items.map((i) => i.id)
+    const { data: menuRows } = await db
+      .from('menu_items')
+      .select('id, price')
+      .in('id', itemIds)
+
+    const priceById = Object.fromEntries(
+      ((menuRows ?? []) as { id: string; price: number }[]).map((row) => [row.id, row.price])
+    )
+
+    const pricedItems = items.map((item) => ({
+      price: priceById[item.id] ?? item.price,
+      quantity: item.quantity,
+    }))
+
+    const totals = calculateOrderTotals(pricedItems, pricingSettings)
+
+    if (
+      pricingSettings.delivery.min_order > 0 &&
+      totals.subtotal < pricingSettings.delivery.min_order
+    ) {
+      return NextResponse.json(
+        {
+          error: `Minimum order is Rs ${pricingSettings.delivery.min_order.toLocaleString('en-PK')}`,
+        },
+        { status: 400 }
+      )
+    }
+
+    const subtotal = totals.subtotal
+    const delivery_fee = totals.deliveryFee
+    const total_amount = totals.grandTotal
+    const order_ref = generateOrderRef()
+
     let customer_id: string | null = null
 
     if (normalizedEmail || customer_phone) {
@@ -138,14 +177,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
     }
 
-    const orderItems = items.map((item) => ({
-      order_id: order.id,
-      menu_item_id: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-      subtotal: item.price * item.quantity,
-    }))
+    const orderItems = items.map((item) => {
+      const unitPrice = priceById[item.id] ?? item.price
+      const discountedUnit = applyDiscount(unitPrice, totals.promo)
+      return {
+        order_id: order.id,
+        menu_item_id: item.id,
+        name: item.name,
+        price: discountedUnit,
+        quantity: item.quantity,
+        subtotal: discountedUnit * item.quantity,
+      }
+    })
 
     const { error: itemsError } = await db.from('order_items').insert(orderItems)
 
@@ -157,8 +200,9 @@ export async function POST(request: Request) {
 
     try {
       await sendAdminNewOrderEmail(order)
+      await sendOrderReceivedEmail(order)
     } catch (emailErr) {
-      console.error('Admin order notification error:', emailErr)
+      console.error('Order email error:', emailErr)
     }
 
     return NextResponse.json({

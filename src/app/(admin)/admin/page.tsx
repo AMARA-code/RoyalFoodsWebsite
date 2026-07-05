@@ -1,31 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { formatPrice } from '@/lib/utils'
-import {
-  ShoppingBag,
-  CalendarDays,
-  TrendingUp,
-  Users,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  ChefHat,
-  ArrowRight,
-  RefreshCw,
-} from 'lucide-react'
+import { ShoppingBag, TrendingUp, Clock, CheckCircle, ArrowRight, RefreshCw, Trash2 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 interface Stats {
   todayOrders: number
   todayRevenue: number
-  todayReservations: number
-  pendingPayments: number
-  totalCustomers: number
+  pendingOrders: number
   activeOrders: number
   recentOrders: RecentOrder[]
-  recentReservations: RecentReservation[]
 }
 
 interface RecentOrder {
@@ -38,24 +26,45 @@ interface RecentOrder {
   created_at: string
 }
 
-interface RecentReservation {
-  id: string
-  booking_ref: string
-  customer_name: string
-  date: string
-  time_slot: string
-  party_size: number
-  status: string
-}
-
 const STATUS_COLORS: Record<string, string> = {
-  pending: '#c9a84c',
-  payment_pending: '#8b6914',
+  pending: '#D62828',
+  payment_pending: '#c9a84c',
   confirmed: '#22c55e',
   preparing: '#3b82f6',
   out_for_delivery: '#a855f7',
   delivered: '#6b7280',
-  cancelled: '#8b0000',
+  cancelled: '#ef4444',
+}
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  loading,
+  href,
+}: {
+  label: string
+  value: string | number
+  icon: LucideIcon
+  loading: boolean
+  href?: string
+}) {
+  return (
+    <div className="rounded-xl p-5 bg-white border border-gray-200 shadow-sm">
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-[11px] font-medium tracking-wide text-gray-500 uppercase">{label}</p>
+        <div className="p-2 rounded-lg bg-[#D62828]/10">
+          <Icon size={16} className="text-[#D62828]" />
+        </div>
+      </div>
+      <p className="text-2xl font-bold text-[#1A2238]">{loading ? '—' : value}</p>
+      {href && (
+        <Link href={href} className="flex items-center gap-1 mt-3 text-xs font-medium text-[#D62828] hover:underline">
+          View all <ArrowRight size={11} />
+        </Link>
+      )}
+    </div>
+  )
 }
 
 export default function AdminDashboardPage() {
@@ -63,401 +72,135 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Stats>({
     todayOrders: 0,
     todayRevenue: 0,
-    todayReservations: 0,
-    pendingPayments: 0,
-    totalCustomers: 0,
+    pendingOrders: 0,
     activeOrders: 0,
     recentOrders: [],
-    recentReservations: [],
   })
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [clearing, setClearing] = useState(false)
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setRefreshing(true)
     const today = new Date().toISOString().split('T')[0]
 
-    const [ordersRes, reservationsRes, customersRes, recentOrdersRes, recentResRes] = await Promise.all([
-      supabase
-        .from('orders')
-        .select('status, payment_method, payment_verified, total_amount, created_at')
-        .gte('created_at', `${today}T00:00:00`)
-        .returns<{ status: string; payment_method: string; payment_verified: boolean; total_amount: number; created_at: string }[]>(),
-      supabase
-        .from('reservations')
-        .select('status, date')
-        .eq('date', today)
-        .returns<{ status: string; date: string }[]>(),
-      // ✅ Fixed: count ALL customers with no date filter, using count: 'exact'
-      supabase
-        .from('customers')
-        .select('id', { count: 'exact', head: true }),
-      supabase
-        .from('orders')
-        .select('id, order_ref, customer_name, total_amount, status, payment_method, created_at')
-        .order('created_at', { ascending: false })
-        .limit(6)
-        .returns<RecentOrder[]>(),
-      supabase
-        .from('reservations')
-        .select('id, booking_ref, customer_name, date, time_slot, party_size, status')
-        .gte('date', today)
-        .order('date', { ascending: true })
-        .limit(5)
-        .returns<RecentReservation[]>(),
+    const [ordersRes, recentOrdersRes] = await Promise.all([
+      supabase.from('orders').select('id, status, total_amount, created_at').gte('created_at', `${today}T00:00:00`),
+      supabase.from('orders').select('id, order_ref, customer_name, total_amount, status, payment_method, created_at').order('created_at', { ascending: false }).limit(8),
     ])
 
-    const orders = ordersRes.data ?? []
-    const todayRevenue = orders
-      .filter(o => o.payment_verified)
-      .reduce((sum, o) => sum + (o.total_amount ?? 0), 0)
-    const pendingPayments = orders.filter(o => o.status === 'payment_pending').length
-    const activeOrders = orders.filter(o =>
-      ['confirmed', 'preparing', 'out_for_delivery'].includes(o.status)
-    ).length
+    const todayOrders = (ordersRes.data ?? []) as { status: string | null; total_amount: number | null }[]
+    const recentOrders = (recentOrdersRes.data ?? []) as RecentOrder[]
 
     setStats({
-      todayOrders: orders.length,
-      todayRevenue,
-      todayReservations: reservationsRes.data?.length ?? 0,
-      pendingPayments,
-      // ✅ Fixed: read from .count instead of .data?.length
-      totalCustomers: customersRes.count ?? 0,
-      activeOrders,
-      recentOrders: recentOrdersRes.data ?? [],
-      recentReservations: recentResRes.data ?? [],
+      todayOrders: todayOrders.length,
+      todayRevenue: todayOrders.reduce((s, o) => s + (o.total_amount ?? 0), 0),
+      pendingOrders: todayOrders.filter((o) => o.status === 'pending' || o.status === 'payment_pending').length,
+      activeOrders: todayOrders.filter((o) => ['confirmed', 'preparing', 'out_for_delivery'].includes(o.status ?? '')).length,
+      recentOrders,
     })
     setLoading(false)
     setRefreshing(false)
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchStats()
     const interval = setInterval(fetchStats, 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchStats])
 
-  const StatCard = ({
-    label,
-    value,
-    icon: Icon,
-    accent,
-    sub,
-    href,
-  }: {
-    label: string
-    value: string | number
-    icon: any
-    accent: string
-    sub?: string
-    href?: string
-  }) => (
-    <div
-      className="rounded-xl p-5 relative overflow-hidden"
-      style={{
-        background: 'var(--bg-card)',
-        border: `1px solid rgba(${accent === 'gold' ? '201,168,76' : '139,0,0'},0.2)`,
-      }}
-    >
-      <div
-        className="absolute inset-0 opacity-5"
-        style={{
-          background: `radial-gradient(circle at 80% 20%, ${accent === 'gold' ? '#c9a84c' : '#8b0000'}, transparent 70%)`,
-        }}
-      />
-      <div className="relative">
-        <div className="flex items-start justify-between mb-3">
-          <p style={{ fontSize: '0.68rem', letterSpacing: '0.14em', color: 'var(--text-secondary)' }}>
-            {label}
-          </p>
-          <div
-            className="p-2 rounded-lg"
-            style={{ background: `rgba(${accent === 'gold' ? '201,168,76' : '139,0,0'},0.12)` }}
-          >
-            <Icon
-              size={16}
-              style={{ color: accent === 'gold' ? 'var(--accent-gold)' : 'var(--accent-crimson)' }}
-            />
-          </div>
-        </div>
-        <p
-          style={{
-            fontSize: '1.8rem',
-            fontFamily: 'var(--font-serif)',
-            color: 'var(--text-primary)',
-            lineHeight: 1,
-          }}
-        >
-          {loading ? '—' : value}
-        </p>
-        {sub && (
-          <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '6px' }}>{sub}</p>
-        )}
-        {href && (
-          <Link
-            href={href}
-            className="flex items-center gap-1 mt-3"
-            style={{ fontSize: '0.7rem', color: accent === 'gold' ? 'var(--accent-gold)' : 'var(--accent-crimson)', textDecoration: 'none' }}
-          >
-            View all <ArrowRight size={11} />
-          </Link>
-        )}
-      </div>
-    </div>
-  )
+  async function clearOrdersAndCustomers() {
+    if (!window.confirm('Delete ALL previous orders and customer records? Settings and menu will be kept. This cannot be undone.')) return
+    setClearing(true)
+    try {
+      const ordersRes = await fetch('/api/admin/orders', { method: 'DELETE' })
+      const ordersJson = await ordersRes.json()
+      if (!ordersRes.ok) throw new Error(ordersJson.error ?? 'Failed to clear orders')
+
+      const customersRes = await fetch('/api/admin/customers', { method: 'DELETE' })
+      const customersJson = await customersRes.json()
+      if (!customersRes.ok) throw new Error(customersJson.error ?? 'Failed to clear customers')
+
+      setStats({
+        todayOrders: 0,
+        todayRevenue: 0,
+        pendingOrders: 0,
+        activeOrders: 0,
+        recentOrders: [],
+      })
+      toast.success('All orders and customers removed')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to clear data')
+    } finally {
+      setClearing(false)
+    }
+  }
 
   return (
-    <div style={{ fontFamily: 'var(--font-sans)' }}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-7">
+    <div>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1
-            style={{
-              fontFamily: 'var(--font-serif)',
-              fontSize: '1.8rem',
-              color: 'var(--text-primary)',
-              letterSpacing: '0.04em',
-            }}
-          >
-            Dashboard
-          </h1>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            {new Date().toLocaleDateString('en-PK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <h1 className="text-xl font-bold text-[#1A2238]">Royal Foods Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {new Date().toLocaleDateString('en-PK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
         <button
+          type="button"
           onClick={fetchStats}
           disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
-          style={{
-            background: 'var(--bg-card)',
-            border: '1px solid rgba(201,168,76,0.2)',
-            color: 'var(--text-secondary)',
-            fontSize: '0.75rem',
-          }}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
         >
           <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
           Refresh
         </button>
-      </div>
-
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-7">
-        <StatCard
-          label="TODAY'S ORDERS"
-          value={stats.todayOrders}
-          icon={ShoppingBag}
-          accent="gold"
-          href="/admin/orders"
-        />
-        <StatCard
-          label="TODAY'S REVENUE"
-          value={formatPrice(stats.todayRevenue)}
-          icon={TrendingUp}
-          accent="gold"
-          href="/admin/revenue"
-        />
-        <StatCard
-          label="RESERVATIONS"
-          value={stats.todayReservations}
-          icon={CalendarDays}
-          accent="gold"
-          sub="Today"
-          href="/admin/reservations"
-        />
-        <StatCard
-          label="PENDING PAYMENTS"
-          value={stats.pendingPayments}
-          icon={AlertCircle}
-          accent="crimson"
-          href="/admin/orders"
-        />
-        <StatCard
-          label="ACTIVE ORDERS"
-          value={stats.activeOrders}
-          icon={Clock}
-          accent="gold"
-          href="/admin/orders"
-        />
-        {/* ✅ Fixed: TOTAL CUSTOMERS — no "Today" sub, reads totalCustomers */}
-        <StatCard
-          label="TOTAL CUSTOMERS"
-          value={stats.totalCustomers}
-          icon={Users}
-          accent="gold"
-          href="/admin/customers"
-        />
-      </div>
-
-      {/* Recent orders + reservations */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-        {/* Recent Orders */}
-        <div
-          className="rounded-xl overflow-hidden"
-          style={{ background: 'var(--bg-card)', border: '1px solid rgba(201,168,76,0.12)' }}
+        <button
+          type="button"
+          onClick={clearOrdersAndCustomers}
+          disabled={clearing}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 disabled:opacity-50"
         >
-          <div
-            className="flex items-center justify-between px-5 py-4"
-            style={{ borderBottom: '1px solid rgba(201,168,76,0.12)' }}
-          >
-            <h2 style={{ fontSize: '0.8rem', letterSpacing: '0.12em', color: 'var(--text-primary)' }}>
-              RECENT ORDERS
-            </h2>
-            <Link
-              href="/admin/orders"
-              style={{ fontSize: '0.7rem', color: 'var(--accent-gold)', textDecoration: 'none' }}
-              className="flex items-center gap-1"
-            >
-              View all <ArrowRight size={11} />
-            </Link>
-          </div>
-          <div>
-            {loading ? (
-              <div className="p-6 text-center" style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                Loading…
-              </div>
-            ) : stats.recentOrders.length === 0 ? (
-              <div className="p-6 text-center" style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                No orders yet
-              </div>
-            ) : (
-              stats.recentOrders.map((order, i) => (
-                <div
-                  key={order.id}
-                  className="flex items-center justify-between px-5 py-3.5 transition-colors"
-                  style={{
-                    borderBottom: i < stats.recentOrders.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                  }}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p style={{ fontSize: '0.78rem', color: 'var(--text-primary)' }}>
-                        {order.customer_name}
-                      </p>
-                      <span
-                        className="px-1.5 py-0.5 rounded text-xs"
-                        style={{
-                          fontSize: '0.6rem',
-                          letterSpacing: '0.08em',
-                          background: `${STATUS_COLORS[order.status] ?? '#555'}22`,
-                          color: STATUS_COLORS[order.status] ?? '#aaa',
-                        }}
-                      >
-                        {order.status.replace(/_/g, ' ').toUpperCase()}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
-                      #{order.order_ref} · {order.payment_method?.replace(/_/g, ' ')}
-                    </p>
-                  </div>
-                  <p style={{ fontSize: '0.82rem', color: 'var(--accent-gold)', fontFamily: 'var(--font-serif)', whiteSpace: 'nowrap' }}>
-                    {formatPrice(order.total_amount ?? 0)}
+          <Trash2 size={13} />
+          {clearing ? 'Clearing…' : 'Clear orders & customers'}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard label="Today's Orders" value={stats.todayOrders} icon={ShoppingBag} loading={loading} href="/admin/orders" />
+        <StatCard label="Today's Revenue" value={formatPrice(stats.todayRevenue)} icon={TrendingUp} loading={loading} />
+        <StatCard label="Pending" value={stats.pendingOrders} icon={Clock} loading={loading} href="/admin/orders" />
+        <StatCard label="Active" value={stats.activeOrders} icon={CheckCircle} loading={loading} href="/admin/orders" />
+      </div>
+
+      <div className="rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="font-semibold text-[#1A2238]">Recent Orders</h2>
+          <Link href="/admin/orders" className="text-xs font-medium text-[#D62828] hover:underline">View all</Link>
+        </div>
+        {stats.recentOrders.length === 0 ? (
+          <p className="px-5 py-10 text-center text-sm text-gray-400">No orders yet</p>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {stats.recentOrders.map((order) => (
+              <Link
+                key={order.id}
+                href="/admin/orders"
+                className="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors"
+              >
+                <div>
+                  <p className="text-sm font-medium text-[#1A2238]">{order.customer_name}</p>
+                  <p className="text-xs text-gray-400">{order.order_ref} · {order.payment_method}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-[#D62828]">{formatPrice(order.total_amount)}</p>
+                  <p className="text-xs capitalize" style={{ color: STATUS_COLORS[order.status] ?? '#888' }}>
+                    {order.status?.replace(/_/g, ' ')}
                   </p>
                 </div>
-              ))
-            )}
+              </Link>
+            ))}
           </div>
-        </div>
-
-        {/* Upcoming Reservations */}
-        <div
-          className="rounded-xl overflow-hidden"
-          style={{ background: 'var(--bg-card)', border: '1px solid rgba(201,168,76,0.12)' }}
-        >
-          <div
-            className="flex items-center justify-between px-5 py-4"
-            style={{ borderBottom: '1px solid rgba(201,168,76,0.12)' }}
-          >
-            <h2 style={{ fontSize: '0.8rem', letterSpacing: '0.12em', color: 'var(--text-primary)' }}>
-              UPCOMING RESERVATIONS
-            </h2>
-            <Link
-              href="/admin/reservations"
-              style={{ fontSize: '0.7rem', color: 'var(--accent-gold)', textDecoration: 'none' }}
-              className="flex items-center gap-1"
-            >
-              View all <ArrowRight size={11} />
-            </Link>
-          </div>
-          <div>
-            {loading ? (
-              <div className="p-6 text-center" style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                Loading…
-              </div>
-            ) : stats.recentReservations.length === 0 ? (
-              <div className="p-6 text-center" style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                No upcoming reservations
-              </div>
-            ) : (
-              stats.recentReservations.map((res, i) => (
-                <div
-                  key={res.id}
-                  className="flex items-center justify-between px-5 py-3.5"
-                  style={{
-                    borderBottom: i < stats.recentReservations.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                  }}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p style={{ fontSize: '0.78rem', color: 'var(--text-primary)' }}>
-                        {res.customer_name}
-                      </p>
-                      <span
-                        className="px-1.5 py-0.5 rounded"
-                        style={{
-                          fontSize: '0.6rem',
-                          letterSpacing: '0.08em',
-                          background: res.status === 'confirmed' ? 'rgba(34,197,94,0.12)' : 'rgba(201,168,76,0.12)',
-                          color: res.status === 'confirmed' ? '#22c55e' : 'var(--accent-gold)',
-                        }}
-                      >
-                        {res.status.toUpperCase()}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
-                      {new Date(res.date).toLocaleDateString('en-PK', { month: 'short', day: 'numeric' })} · {res.time_slot} · {res.party_size} guests
-                    </p>
-                  </div>
-                  <p style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
-                    #{res.booking_ref}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Quick actions */}
-      <div className="mt-6">
-        <p style={{ fontSize: '0.68rem', letterSpacing: '0.14em', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-          QUICK ACTIONS
-        </p>
-        <div className="flex flex-wrap gap-3">
-          {[
-            { href: '/admin/menu', label: 'Add Menu Item', icon: ChefHat },
-            { href: '/admin/orders', label: 'Review Payments', icon: AlertCircle },
-            { href: '/admin/gallery', label: 'Upload to Gallery', icon: CheckCircle },
-            { href: '/admin/settings', label: 'Update Hours', icon: Clock },
-          ].map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-colors"
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid rgba(201,168,76,0.15)',
-                color: 'var(--text-secondary)',
-                fontSize: '0.75rem',
-                textDecoration: 'none',
-              }}
-            >
-              <Icon size={13} style={{ color: 'var(--accent-gold)' }} />
-              {label}
-            </Link>
-          ))}
-        </div>
+        )}
       </div>
     </div>
   )

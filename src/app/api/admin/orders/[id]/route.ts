@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { sendOrderConfirmedEmail } from '@/lib/email'
+import { sendOrderConfirmedEmailOrReport } from '@/lib/email'
 import {
   applyCustomerRevenue,
   canAdminChangeStatus,
@@ -10,6 +10,25 @@ import type { Order, OrderStatus } from '@/types/database'
 
 interface RouteContext {
   params: Promise<{ id: string }>
+}
+
+function emailErrorMessage(result: Extract<Awaited<ReturnType<typeof sendOrderConfirmedEmailOrReport>>, { ok: false }>) {
+  if (result.reason === 'missing_email') {
+    return 'Customer email is missing or invalid. Confirmation email was not sent.'
+  }
+  return result.message
+}
+
+async function confirmWithEmail(updated: Order) {
+  const emailResult = await sendOrderConfirmedEmailOrReport(updated)
+  if (!emailResult.ok) {
+    return {
+      success: true as const,
+      data: updated,
+      emailError: emailErrorMessage(emailResult),
+    }
+  }
+  return { success: true as const, data: updated }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -72,16 +91,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       await applyCustomerRevenue(db, updated, wasVerified)
 
       if (needsConfirm) {
-        try {
-          await sendOrderConfirmedEmail(updated)
-        } catch (emailErr) {
-          console.error('Confirmation email error:', emailErr)
-          return NextResponse.json({
-            success: true,
-            data: updated,
-            emailError: emailErr instanceof Error ? emailErr.message : 'Email failed',
-          })
-        }
+        return NextResponse.json(await confirmWithEmail(updated))
       }
 
       return NextResponse.json({ success: true, data: updated })
@@ -113,16 +123,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       await applyCustomerRevenue(db, updated, wasVerified)
 
       if (existing.status !== 'confirmed') {
-        try {
-          await sendOrderConfirmedEmail(updated)
-        } catch (emailErr) {
-          console.error('Confirmation email error:', emailErr)
-          return NextResponse.json({
-            success: true,
-            data: updated,
-            emailError: emailErr instanceof Error ? emailErr.message : 'Email failed',
-          })
-        }
+        return NextResponse.json(await confirmWithEmail(updated))
       }
 
       return NextResponse.json({ success: true, data: updated })
@@ -173,18 +174,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
         await applyCustomerRevenue(db, updated, wasVerified)
 
-        try {
-          await sendOrderConfirmedEmail(updated)
-        } catch (emailErr) {
-          console.error('Confirmation email error:', emailErr)
-          return NextResponse.json({
-            success: true,
-            data: updated,
-            emailError: emailErr instanceof Error ? emailErr.message : 'Email failed',
-          })
-        }
-
-        return NextResponse.json({ success: true, data: updated })
+        return NextResponse.json(await confirmWithEmail(updated))
       }
 
       // Already confirmed but payment never verified (legacy / early confirm)
