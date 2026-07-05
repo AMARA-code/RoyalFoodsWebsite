@@ -65,7 +65,9 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     const subs: StoredPushSubscription[] = Array.isArray(data?.value)
-      ? data.value.filter(isStoredPushSubscription).filter((item) => item.active !== false)
+      ? (data.value.filter(isStoredPushSubscription) as StoredPushSubscription[]).filter(
+          (item: StoredPushSubscription) => item.active !== false
+        )
       : []
 
     if (subs.length === 0) {
